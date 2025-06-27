@@ -541,7 +541,12 @@ class LapAnalyzer:
 
         # Format distance
         if avg_distance >= 1000:
-            distance_str = f"{avg_distance/1000:.1f}km"
+            km_value = avg_distance / 1000
+            # Format as integer if it's a whole number of km
+            if km_value == int(km_value):
+                distance_str = f"{int(km_value)}km"
+            else:
+                distance_str = f"{km_value:.1f}km"
         else:
             distance_str = f"{int(avg_distance)}m"
 
@@ -559,7 +564,12 @@ class LapAnalyzer:
         
         # Show either time or distance, never both
         if is_distance_based:
-            description = f"{count} x {distance_str}"
+            # Check for imperial distance display first
+            is_imperial, imperial_display = self._is_imperial_distance(avg_distance)
+            if is_imperial:
+                description = f"{count} x {imperial_display}"
+            else:
+                description = f"{count} x {distance_str}"
         else:
             # Time-based description (default)
             description = f"{count} x {time_str}"
@@ -574,9 +584,17 @@ class LapAnalyzer:
             recovery_is_distance_based = self._is_distance_based_workout(avg_rest_distance, avg_rest_time)
             
             if recovery_is_distance_based:
-                # Distance-based recovery
-                if avg_rest_distance >= 1000:
-                    recovery_str = f"{avg_rest_distance/1000:.1f}km"
+                # Distance-based recovery - check imperial first
+                is_imperial_recovery, imperial_recovery_display = self._is_imperial_distance(avg_rest_distance)
+                if is_imperial_recovery:
+                    recovery_str = imperial_recovery_display
+                elif avg_rest_distance >= 1000:
+                    km_value = avg_rest_distance / 1000
+                    # Format as integer if it's a whole number of km
+                    if km_value == int(km_value):
+                        recovery_str = f"{int(km_value)}km"
+                    else:
+                        recovery_str = f"{km_value:.1f}km"
                 else:
                     recovery_str = f"{int(avg_rest_distance)}m"
             else:
@@ -610,20 +628,51 @@ class LapAnalyzer:
             if abs(avg_distance - std_dist) / std_dist < 0.1:  # Within 10%
                 return True
         
-        # Check for round distances (e.g., 500m, 750m, 2500m)
-        # Round to nearest 50m and see if it's close to original
+        # Check for imperial distances (1 mile+ in 0.5 mile intervals)
+        if self._is_imperial_distance(avg_distance)[0]:
+            return True
+        
+        # Check for round metric distances (e.g., 500m, 750m, 2500m)
         rounded_distance = round(avg_distance / 50) * 50
         if abs(avg_distance - rounded_distance) / avg_distance < 0.1:
             # If it rounds to a "nice" number, likely distance-based
             if rounded_distance % 100 == 0 or rounded_distance % 50 == 0:
                 return True
         
-        # Additional check: very short intervals (<20 seconds) are usually time-based
-        if avg_time < 20:
+        # Additional checks for time-based intervals
+        if avg_time < 20:  # Very short intervals (<20 seconds) are usually time-based
+            return False
+        
+        if avg_distance < 300:  # Short distances (<300m) are usually time-based
             return False
         
         # Default: assume time-based
         return False
+    
+    def _is_imperial_distance(self, avg_distance: float) -> Tuple[bool, str]:
+        """
+        Check if distance matches imperial intervals (1+ miles in 0.5 mile increments)
+        Returns (is_imperial, display_string)
+        """
+        # Imperial distances: 1 mile, 1.5 miles, 2 miles, 2.5 miles, etc.
+        # 1 mile = 1609.344 meters
+        mile_in_meters = 1609.344
+        
+        # Check from 1 mile up to 10 miles in 0.5 mile increments
+        for half_miles in range(2, 21):  # 2 = 1 mile, 3 = 1.5 miles, 4 = 2 miles, etc.
+            miles = half_miles / 2.0
+            distance_meters = miles * mile_in_meters
+            
+            # Check if within 5% of this imperial distance
+            if abs(avg_distance - distance_meters) / distance_meters < 0.05:
+                # Format display string
+                if miles == int(miles):
+                    display = f"{int(miles)} mile{'s' if miles != 1 else ''}"
+                else:
+                    display = f"{miles} miles"
+                return True, display
+        
+        return False, ""
 
     def _calculate_confidence(self, interval_laps: List[Lap], all_laps: List[Lap]) -> float:
         """Calculate confidence score for the detected pattern"""

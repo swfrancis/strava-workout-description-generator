@@ -8,8 +8,8 @@ class LapAnalyzer:
 
     def __init__(self):
         self.min_interval_count = 2  # Minimum intervals to consider a pattern
-        self.distance_tolerance = 0.1  # 10% tolerance for distance grouping
-        self.time_tolerance = 0.1  # 15% tolerance for time grouping
+        self.distance_tolerance = 0.15  # 15% tolerance for distance grouping (more lenient)
+        self.time_tolerance = 0.15  # 15% tolerance for time grouping (more lenient)
 
     def analyze_laps(self, laps: List[Lap]) -> List[WorkoutPattern]:
         """
@@ -36,17 +36,28 @@ class LapAnalyzer:
         if work_laps and rest_laps:
             # Group work laps by similar characteristics
             interval_groups = self._group_similar_laps(work_laps)
-            patterns = self._find_all_patterns(interval_groups, work_laps)
+            
+            # For work/rest patterns, prioritize simple patterns over complex ones
+            patterns = []
+            
+            # First, find simple interval patterns
+            simple_patterns = []
+            for group in interval_groups:
+                if len(group) >= self.min_interval_count:
+                    pattern = self._create_workout_pattern(group, work_laps, f"intervals_{len(simple_patterns)+1}")
+                    simple_patterns.append(pattern)
+            
+            # Only look for complex patterns if no good simple patterns found
+            if not simple_patterns:
+                patterns = self._find_all_patterns(interval_groups, work_laps)
+            else:
+                patterns = simple_patterns
             
             # Add rest information to patterns
             if patterns:
                 for pattern in patterns:
                     pattern.rest_periods = self._calculate_rest_info(work_laps, rest_laps, filtered_laps)
-                    # Update description to include recovery info
-                    if pattern.rest_periods:
-                        avg_rest_time = sum(r['time'] for r in pattern.rest_periods) / len(pattern.rest_periods)
-                        rest_str = self._format_time(avg_rest_time)
-                        pattern.description += f" w/ {rest_str} recovery"
+                    # Recovery info is already added in _generate_pattern_description, no need to add here
             
             return patterns
         else:
@@ -175,7 +186,7 @@ class LapAnalyzer:
                                     if abs(d - avg_work_dist) / avg_work_dist < 0.2)
                 
                 # If most work laps are consistent, this is likely work/rest pattern
-                if consistent_work >= len(work_laps) * 0.7:
+                if consistent_work >= len(work_laps) * 0.6:  # More lenient (60% instead of 70%)
                     return work_laps, rest_laps
         
         # Fallback: treat all as work intervals
@@ -213,19 +224,47 @@ class LapAnalyzer:
         return filtered
     
     def _calculate_rest_info(self, work_laps: List[Lap], rest_laps: List[Lap], all_laps: List[Lap]) -> List[Dict]:
-        """Calculate rest period information"""
+        """Calculate rest period information with consistency checking"""
         rest_periods = []
         
-        # Simple approach: average the rest laps
-        if rest_laps:
-            avg_rest_time = sum(lap.elapsed_time for lap in rest_laps) / len(rest_laps)
-            avg_rest_dist = sum(lap.distance for lap in rest_laps) / len(rest_laps)
-            
-            rest_periods.append({
-                "time": avg_rest_time,
-                "distance": avg_rest_dist,
-                "lap_count": len(rest_laps)
-            })
+        if not rest_laps or len(rest_laps) < 2:
+            return rest_periods
+        
+        # Check consistency of recovery times and distances
+        rest_times = [lap.elapsed_time for lap in rest_laps]
+        rest_distances = [lap.distance for lap in rest_laps]
+        
+        # Calculate coefficient of variation (CV) for consistency check
+        avg_time = sum(rest_times) / len(rest_times)
+        avg_distance = sum(rest_distances) / len(rest_distances)
+        
+        # Check time consistency
+        if len(rest_times) > 1 and avg_time > 0:
+            time_variance = sum((t - avg_time) ** 2 for t in rest_times) / len(rest_times)
+            time_cv = (time_variance ** 0.5) / avg_time
+        else:
+            time_cv = 0
+        
+        # Check distance consistency  
+        if len(rest_distances) > 1 and avg_distance > 0:
+            dist_variance = sum((d - avg_distance) ** 2 for d in rest_distances) / len(rest_distances)
+            dist_cv = (dist_variance ** 0.5) / avg_distance
+        else:
+            dist_cv = 0
+        
+        # If recovery is too inconsistent, don't show it
+        # CV > 0.4 means >40% variation - too inconsistent for meaningful description
+        if time_cv > 0.4 and dist_cv > 0.4:
+            return rest_periods  # Return empty - no recovery shown
+        
+        # If reasonably consistent, show the dominant pattern
+        rest_periods.append({
+            "time": avg_time,
+            "distance": avg_distance,
+            "lap_count": len(rest_laps),
+            "time_cv": time_cv,
+            "dist_cv": dist_cv
+        })
         
         return rest_periods
     
@@ -596,7 +635,7 @@ class LapAnalyzer:
         if avg_time < 20:
             return False
         
-        # Default: assume time-based (removed long interval check)
+        # Default: assume time-based
         return False
 
     def _calculate_confidence(self, interval_laps: List[Lap], all_laps: List[Lap]) -> float:
@@ -668,10 +707,10 @@ def analyze_workout_from_laps(laps: List[Lap], activity_name: str = "",
         short_desc = primary_pattern.description
         detailed_desc = f"Workout structure: {primary_pattern.description}"
     else:
-        # Multiple patterns detected
+        # Multiple patterns detected - format on separate lines
         pattern_descriptions = [p.description for p in patterns]
-        short_desc = " + ".join(pattern_descriptions)
-        detailed_desc = f"Complex workout with multiple patterns: {', '.join(pattern_descriptions)}"
+        short_desc = "\n".join(pattern_descriptions)  # Multi-line format
+        detailed_desc = f"Complex workout with multiple patterns:\n{chr(10).join(pattern_descriptions)}"
 
     # Create workout analysis
     analysis = WorkoutAnalysis(
@@ -682,7 +721,7 @@ def analyze_workout_from_laps(laps: List[Lap], activity_name: str = "",
         total_time=total_time,
         has_laps=True,
         lap_count=len(laps),
-        lap_analysis=f"Detected {len(patterns)} pattern(s): {short_desc}",
+        lap_analysis=f"Detected {len(patterns)} pattern(s):\n{short_desc}" if len(patterns) > 1 else f"Detected {len(patterns)} pattern(s): {short_desc}",
         detected_patterns=patterns,
         primary_pattern=primary_pattern,
         short_description=short_desc,

@@ -11,24 +11,21 @@ class LapAnalyzer:
         self.distance_tolerance = 0.1  # 10% tolerance for distance grouping
         self.time_tolerance = 0.1  # 15% tolerance for time grouping
 
-    def analyze_laps(self, laps: List[Lap]) -> Optional[WorkoutPattern]:
+    def analyze_laps(self, laps: List[Lap]) -> List[WorkoutPattern]:
         """
         Analyze laps to detect interval patterns
-        Returns a WorkoutPattern if intervals are detected, None otherwise
+        Returns a list of WorkoutPatterns if intervals are detected, empty list otherwise
         """
         if len(laps) < self.min_interval_count:
-            return None
+            return []
 
         # Group laps by similar characteristics
         interval_groups = self._group_similar_laps(laps)
 
-        # Find the most common interval pattern
-        main_pattern = self._find_main_pattern(interval_groups)
+        # Find all interval patterns (simple and complex)
+        patterns = self._find_all_patterns(interval_groups, laps)
 
-        if main_pattern:
-            return self._create_workout_pattern(main_pattern, laps)
-
-        return None
+        return patterns
 
     def _group_similar_laps(self, laps: List[Lap]) -> List[List[Lap]]:
         """Group laps with similar distance and time characteristics"""
@@ -68,19 +65,172 @@ class LapAnalyzer:
 
         return True
 
-    def _find_main_pattern(self, groups: List[List[Lap]]) -> Optional[List[Lap]]:
-        """Find the group that represents the main interval pattern"""
-        # Filter groups with minimum interval count
-        interval_groups = [g for g in groups if len(
-            g) >= self.min_interval_count]
-
-        if not interval_groups:
+    def _find_all_patterns(self, groups: List[List[Lap]], all_laps: List[Lap]) -> List[WorkoutPattern]:
+        """Find all interval patterns including complex multi-group patterns"""
+        patterns = []
+        
+        # First, check for simple single-group patterns
+        interval_groups = [g for g in groups if len(g) >= self.min_interval_count]
+        
+        for group in interval_groups:
+            pattern = self._create_workout_pattern(group, all_laps, f"intervals_{len(patterns)+1}")
+            patterns.append(pattern)
+        
+        # Check for complex repeating patterns (e.g., 3 x (800m, 600m, 400m))
+        complex_pattern = self._detect_complex_pattern(groups, all_laps)
+        if complex_pattern:
+            patterns.append(complex_pattern)
+        
+        return patterns
+    
+    def _detect_complex_pattern(self, groups: List[List[Lap]], all_laps: List[Lap]) -> Optional[WorkoutPattern]:
+        """Detect complex repeating patterns like pyramids or ladder intervals"""
+        if len(groups) < 2:
             return None
+        
+        # Look for repeating sequences of different lap types
+        # Sort groups by average distance to identify pattern order
+        sorted_groups = sorted(groups, key=lambda g: sum(lap.distance for lap in g) / len(g))
+        
+        # Try to find repeating sequences
+        for seq_length in range(2, min(len(sorted_groups) + 1, 6)):  # Max sequence length of 5
+            pattern_sequence = self._find_repeating_sequence(sorted_groups, seq_length, all_laps)
+            if pattern_sequence:
+                return pattern_sequence
+        
+        return None
+    
+    def _find_repeating_sequence(self, groups: List[List[Lap]], seq_length: int, all_laps: List[Lap]) -> Optional[WorkoutPattern]:
+        """Find if there's a repeating sequence of interval types"""
+        if len(groups) < seq_length:
+            return None
+        
+        # Create a sequence pattern from lap indices
+        lap_sequence = []
+        group_to_type = {}
+        
+        # Assign each group a type identifier
+        for i, group in enumerate(groups):
+            group_to_type[id(group)] = f"type_{i}"
+            for lap in group:
+                lap_sequence.append((lap.lap_index, f"type_{i}", lap))
+        
+        # Sort by lap index to get chronological order
+        lap_sequence.sort(key=lambda x: x[0])
+        
+        # Look for repeating patterns in the sequence
+        type_sequence = [item[1] for item in lap_sequence]
+        
+        # Check if we have enough repetitions
+        if len(type_sequence) < seq_length * 2:  # Need at least 2 full repetitions
+            return None
+        
+        # Check for exact repetitions
+        pattern = type_sequence[:seq_length]
+        repetitions = 0
+        
+        for i in range(0, len(type_sequence), seq_length):
+            if i + seq_length <= len(type_sequence):
+                if type_sequence[i:i + seq_length] == pattern:
+                    repetitions += 1
+                else:
+                    break
+        
+        if repetitions >= 2:  # Found a repeating pattern
+            # Extract the laps that form this pattern
+            pattern_laps = []
+            for i in range(repetitions * seq_length):
+                pattern_laps.append(lap_sequence[i][2])
+            
+            return self._create_complex_workout_pattern(pattern_laps, pattern, repetitions, all_laps)
+        
+        return None
+    
+    def _create_complex_workout_pattern(self, pattern_laps: List[Lap], pattern_types: List[str], 
+                                      repetitions: int, all_laps: List[Lap]) -> WorkoutPattern:
+        """Create a WorkoutPattern for complex repeating patterns"""
+        
+        seq_length = len(pattern_types)
+        
+        # Group laps by their position in the sequence
+        sequence_groups = [[] for _ in range(seq_length)]
+        
+        for i, lap in enumerate(pattern_laps):
+            sequence_groups[i % seq_length].append(lap)
+        
+        # Calculate average distances for each position in sequence
+        avg_distances = []
+        for group in sequence_groups:
+            if group:
+                avg_dist = sum(lap.distance for lap in group) / len(group)
+                avg_distances.append(avg_dist)
+        
+        # Generate description for complex pattern
+        distance_parts = []
+        for dist in avg_distances:
+            if dist >= 1000:
+                distance_parts.append(f"{dist/1000:.1f}km")
+            else:
+                distance_parts.append(f"{int(dist)}m")
+        
+        description = f"{repetitions} x ({', '.join(distance_parts)})"
+        
+        # Create interval data
+        intervals = []
+        for i, lap in enumerate(pattern_laps):
+            intervals.append({
+                "number": i + 1,
+                "distance": lap.distance,
+                "time": lap.elapsed_time,
+                "lap_index": lap.lap_index,
+                "sequence_position": i % seq_length,
+                "repetition": i // seq_length + 1
+            })
+        
+        return WorkoutPattern(
+            pattern_type="complex_intervals",
+            intervals=intervals,
+            rest_periods=self._detect_rest_periods(pattern_laps, all_laps),
+            confidence=self._calculate_complex_confidence(pattern_laps, sequence_groups),
+            description=description
+        )
+    
+    def _calculate_complex_confidence(self, pattern_laps: List[Lap], sequence_groups: List[List[Lap]]) -> float:
+        """Calculate confidence for complex patterns"""
+        if not sequence_groups or not pattern_laps:
+            return 0.1
+        
+        # Check consistency within each position of the sequence
+        position_consistencies = []
+        
+        for group in sequence_groups:
+            if len(group) > 1:
+                distances = [lap.distance for lap in group if lap.distance > 0]
+                times = [lap.elapsed_time for lap in group if lap.elapsed_time > 0]
+                
+                dist_consistency = 1.0
+                time_consistency = 1.0
+                
+                if len(distances) > 1:
+                    dist_cv = statistics.stdev(distances) / statistics.mean(distances)
+                    dist_consistency = max(0, 1 - dist_cv * 3)
+                
+                if len(times) > 1:
+                    time_cv = statistics.stdev(times) / statistics.mean(times)
+                    time_consistency = max(0, 1 - time_cv * 2)
+                
+                position_consistencies.append((dist_consistency + time_consistency) / 2)
+            else:
+                position_consistencies.append(0.5)
+        
+        avg_consistency = statistics.mean(position_consistencies) if position_consistencies else 0.5
+        
+        # Bonus for having multiple repetitions
+        repetition_bonus = min(0.2, len(pattern_laps) / (len(sequence_groups) * 10))
+        
+        return min(1.0, max(0.1, avg_consistency + repetition_bonus))
 
-        # Return the largest group (most common interval type)
-        return max(interval_groups, key=len)
-
-    def _create_workout_pattern(self, interval_laps: List[Lap], all_laps: List[Lap]) -> WorkoutPattern:
+    def _create_workout_pattern(self, interval_laps: List[Lap], all_laps: List[Lap], pattern_id: str = "intervals") -> WorkoutPattern:
         """Create a WorkoutPattern from detected interval laps"""
 
         # Calculate interval statistics
@@ -235,20 +385,40 @@ def analyze_workout_from_laps(laps: List[Lap], activity_name: str = "",
                               activity_type: str = "") -> Optional[WorkoutAnalysis]:
     """
     Main function to analyze workout from lap data
-    Returns WorkoutAnalysis if pattern detected, None otherwise
+    Returns WorkoutAnalysis if patterns detected, None otherwise
     """
     if not laps:
         return None
 
     analyzer = LapAnalyzer()
-    pattern = analyzer.analyze_laps(laps)
+    patterns = analyzer.analyze_laps(laps)
 
-    if not pattern:
+    if not patterns:
         return None
 
     # Calculate basic workout stats
     total_distance = sum(lap.distance for lap in laps)
     total_time = sum(lap.elapsed_time for lap in laps)
+
+    # Choose primary pattern (highest confidence or complex pattern if available)
+    primary_pattern = None
+    if patterns:
+        # Prefer complex patterns, then highest confidence
+        complex_patterns = [p for p in patterns if p.pattern_type == "complex_intervals"]
+        if complex_patterns:
+            primary_pattern = max(complex_patterns, key=lambda p: p.confidence)
+        else:
+            primary_pattern = max(patterns, key=lambda p: p.confidence)
+
+    # Generate comprehensive description
+    if len(patterns) == 1:
+        short_desc = primary_pattern.description
+        detailed_desc = f"Workout structure: {primary_pattern.description}"
+    else:
+        # Multiple patterns detected
+        pattern_descriptions = [p.description for p in patterns]
+        short_desc = " + ".join(pattern_descriptions)
+        detailed_desc = f"Complex workout with multiple patterns: {', '.join(pattern_descriptions)}"
 
     # Create workout analysis
     analysis = WorkoutAnalysis(
@@ -259,13 +429,13 @@ def analyze_workout_from_laps(laps: List[Lap], activity_name: str = "",
         total_time=total_time,
         has_laps=True,
         lap_count=len(laps),
-        lap_analysis=f"Detected {pattern.description}",
-        detected_patterns=[pattern],
-        primary_pattern=pattern,
-        short_description=pattern.description,
-        detailed_description=f"Workout structure: {pattern.description}. Total: {total_distance/1000:.1f}km in {total_time//60}:{total_time % 60:02d}",
+        lap_analysis=f"Detected {len(patterns)} pattern(s): {short_desc}",
+        detected_patterns=patterns,
+        primary_pattern=primary_pattern,
+        short_description=short_desc,
+        detailed_description=f"{detailed_desc}. Total: {total_distance/1000:.1f}km in {total_time//60}:{total_time % 60:02d}",
         analysis_method="laps",
-        confidence=pattern.confidence
+        confidence=primary_pattern.confidence if primary_pattern else 0.1
     )
 
     return analysis

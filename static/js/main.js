@@ -133,7 +133,7 @@ function showSuccessPage() {
                     <ul>
                         <li>We've set up automatic monitoring of your new activities</li>
                         <li>Every workout will be analyzed within seconds of completion</li>
-                        <li>Descriptions will be automatically updated on Strava</li>
+                        <li>Professional descriptions will be automatically added to your activities</li>
                         <li>You can close this page and forget about it!</li>
                     </ul>
                 </div>

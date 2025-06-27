@@ -138,6 +138,11 @@ body {
     color: var(--text-primary);
 }
 
+.example-card .empty-state {
+    color: var(--text-light);
+    font-style: italic;
+}
+
 .arrow {
     font-size: 1.5rem;
     color: var(--primary-color);
@@ -326,7 +331,7 @@ body {
 }
 
 .original::before {
-    content: 'Before: ';
+    content: 'Before (Description): ';
     font-weight: 600;
     color: var(--text-light);
 }
@@ -340,7 +345,7 @@ body {
 }
 
 .generated::before {
-    content: 'After: ';
+    content: 'After (Description): ';
     font-weight: 600;
     color: var(--primary-color);
 }

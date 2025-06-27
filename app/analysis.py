@@ -19,13 +19,95 @@ class LapAnalyzer:
         if len(laps) < self.min_interval_count:
             return []
 
-        # Group laps by similar characteristics
-        interval_groups = self._group_similar_laps(laps)
+        # First check if these are auto-generated laps (not manual intervals)
+        if self._are_auto_laps(laps):
+            return []
 
-        # Find all interval patterns (simple and complex)
-        patterns = self._find_all_patterns(interval_groups, laps)
+        # Filter out warmup/cooldown laps (very long laps at start/end)
+        filtered_laps = self._filter_warmup_cooldown(laps)
+        
+        if len(filtered_laps) < self.min_interval_count:
+            return []
+
+        # Try to identify work vs rest laps
+        work_laps, rest_laps = self._identify_work_and_rest_laps(filtered_laps)
+        
+        # If we found clear work/rest separation, analyze work laps only
+        if work_laps and rest_laps:
+            # Group work laps by similar characteristics
+            interval_groups = self._group_similar_laps(work_laps)
+            patterns = self._find_all_patterns(interval_groups, work_laps)
+            
+            # Add rest information to patterns
+            if patterns:
+                for pattern in patterns:
+                    pattern.rest_periods = self._calculate_rest_info(work_laps, rest_laps, filtered_laps)
+                    # Update description to include recovery info
+                    if pattern.rest_periods:
+                        avg_rest_time = sum(r['time'] for r in pattern.rest_periods) / len(pattern.rest_periods)
+                        rest_str = self._format_time(avg_rest_time)
+                        pattern.description += f" w/ {rest_str} recovery"
+            
+            return patterns
+        else:
+            # Standard analysis without work/rest separation
+            interval_groups = self._group_similar_laps(filtered_laps)
+            patterns = self._find_all_patterns(interval_groups, filtered_laps)
 
         return patterns
+    
+    def _are_auto_laps(self, laps: List[Lap]) -> bool:
+        """
+        Detect if laps are auto-generated (e.g., every 1km) rather than manual intervals
+        Auto-laps typically have:
+        - Consistent round distances (1km, 1mi, etc.)
+        - Sequential lap indices with no gaps
+        - All laps similar distance except possibly the last one
+        """
+        if len(laps) < 2:
+            return False
+        
+        distances = [lap.distance for lap in laps if lap.distance > 0]
+        
+        # Check if most laps have the same round distance
+        # Common auto-lap distances: 1000m (1km), 1609m (1mi), 5000m (5km)
+        common_distances = [1000, 1609, 5000, 400, 800]  # meters
+        
+        for auto_distance in common_distances:
+            # Count how many laps match this auto-distance (within 5% tolerance)
+            matching_laps = 0
+            for dist in distances:
+                if abs(dist - auto_distance) / auto_distance < 0.05:
+                    matching_laps += 1
+            
+            # If most laps (excluding possibly last partial lap) match an auto-distance
+            if matching_laps >= len(distances) - 1 and matching_laps >= len(distances) * 0.8:
+                # Additional check: last lap should be significantly shorter if it's partial
+                if len(distances) > 1:
+                    last_lap_dist = distances[-1]
+                    second_last_dist = distances[-2]
+                    
+                    # If last lap is much shorter, this looks like auto-laps with partial final lap
+                    if last_lap_dist < second_last_dist * 0.7:
+                        return True
+                    # If all laps are same distance, also likely auto-laps
+                    elif abs(last_lap_dist - auto_distance) / auto_distance < 0.05:
+                        return True
+        
+        # Additional check: if all laps have very similar distances (not intervals)
+        if len(distances) > 2:
+            avg_distance = sum(distances[:-1]) / (len(distances) - 1)  # Exclude last lap
+            consistent_count = 0
+            
+            for dist in distances[:-1]:  # Check all but last lap
+                if abs(dist - avg_distance) / avg_distance < 0.05:  # Within 5%
+                    consistent_count += 1
+            
+            # If 90%+ of laps are very similar distance, likely auto-laps
+            if consistent_count >= (len(distances) - 1) * 0.9:
+                return True
+        
+        return False
 
     def _group_similar_laps(self, laps: List[Lap]) -> List[List[Lap]]:
         """Group laps with similar distance and time characteristics"""
@@ -46,6 +128,116 @@ class LapAnalyzer:
                 groups.append([lap])
 
         return groups
+    
+    def _identify_work_and_rest_laps(self, laps: List[Lap]) -> tuple[List[Lap], List[Lap]]:
+        """
+        Identify which laps are work intervals vs rest periods
+        Returns (work_laps, rest_laps)
+        """
+        if len(laps) < 3:
+            return laps, []
+        
+        # Calculate pace for each lap (seconds per km)
+        lap_paces = []
+        for lap in laps:
+            if lap.distance > 0 and lap.elapsed_time > 0:
+                pace_per_km = (lap.elapsed_time / (lap.distance / 1000))
+                lap_paces.append((lap, pace_per_km))
+        
+        if len(lap_paces) < 3:
+            return laps, []
+        
+        # Sort by pace to identify fast vs slow laps
+        lap_paces.sort(key=lambda x: x[1])
+        
+        # Find natural break between fast (work) and slow (rest) paces
+        # Look for the biggest gap in pace
+        pace_gaps = []
+        for i in range(len(lap_paces) - 1):
+            gap = lap_paces[i + 1][1] - lap_paces[i][1]
+            pace_gaps.append((i, gap))
+        
+        # Find the largest gap
+        if pace_gaps:
+            largest_gap_idx = max(pace_gaps, key=lambda x: x[1])[0]
+            
+            # Split into fast (work) and slow (rest) groups
+            work_laps = [lap for lap, pace in lap_paces[:largest_gap_idx + 1]]
+            rest_laps = [lap for lap, pace in lap_paces[largest_gap_idx + 1:]]
+            
+            # Additional validation: work intervals should be reasonably consistent
+            if len(work_laps) >= 2 and len(rest_laps) >= 1:
+                # Check if work laps have similar distances (within 20% tolerance)
+                work_distances = [lap.distance for lap in work_laps]
+                avg_work_dist = sum(work_distances) / len(work_distances)
+                
+                consistent_work = sum(1 for d in work_distances 
+                                    if abs(d - avg_work_dist) / avg_work_dist < 0.2)
+                
+                # If most work laps are consistent, this is likely work/rest pattern
+                if consistent_work >= len(work_laps) * 0.7:
+                    return work_laps, rest_laps
+        
+        # Fallback: treat all as work intervals
+        return laps, []
+    
+    def _filter_warmup_cooldown(self, laps: List[Lap]) -> List[Lap]:
+        """Filter out obvious warmup/cooldown laps (very long laps at start/end)"""
+        if len(laps) <= 2:
+            return laps
+        
+        filtered = laps[:]
+        
+        # Remove first lap if it's much longer than the others (warmup)
+        if len(filtered) > 2:
+            first_dist = filtered[0].distance
+            second_dist = filtered[1].distance
+            third_dist = filtered[2].distance
+            avg_middle = (second_dist + third_dist) / 2
+            
+            # If first lap is >3x longer than average of next two, likely warmup
+            if first_dist > avg_middle * 3:
+                filtered = filtered[1:]
+        
+        # Remove last lap if it's much longer than the others (cooldown)
+        if len(filtered) > 2:
+            last_dist = filtered[-1].distance
+            second_last_dist = filtered[-2].distance
+            third_last_dist = filtered[-3].distance
+            avg_middle = (second_last_dist + third_last_dist) / 2
+            
+            # If last lap is >3x longer than average of previous two, likely cooldown
+            if last_dist > avg_middle * 3:
+                filtered = filtered[:-1]
+        
+        return filtered
+    
+    def _calculate_rest_info(self, work_laps: List[Lap], rest_laps: List[Lap], all_laps: List[Lap]) -> List[Dict]:
+        """Calculate rest period information"""
+        rest_periods = []
+        
+        # Simple approach: average the rest laps
+        if rest_laps:
+            avg_rest_time = sum(lap.elapsed_time for lap in rest_laps) / len(rest_laps)
+            avg_rest_dist = sum(lap.distance for lap in rest_laps) / len(rest_laps)
+            
+            rest_periods.append({
+                "time": avg_rest_time,
+                "distance": avg_rest_dist,
+                "lap_count": len(rest_laps)
+            })
+        
+        return rest_periods
+    
+    def _format_time(self, seconds: float) -> str:
+        """Format seconds into MM:SS or SS format"""
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        
+        if minutes > 0:
+            return f"{minutes}:{secs:02d}"
+        else:
+            return f"{secs}s"
 
     def _laps_are_similar(self, lap1: Lap, lap2: Lap) -> bool:
         """Check if two laps are similar in distance and time"""
@@ -317,34 +509,82 @@ class LapAnalyzer:
             distance_str = f"{int(avg_distance)}m"
 
         # Format time
-        minutes = avg_time // 60
-        seconds = avg_time % 60
+        minutes = int(avg_time // 60)
+        seconds = int(avg_time % 60)
         if minutes > 0:
             time_str = f"{minutes}:{seconds:02d}"
         else:
             time_str = f"{seconds}s"
 
-        # Basic pattern description
-        description = f"{count} x {distance_str}"
+        # Determine if this is clearly a distance-based workout
+        is_distance_based = self._is_distance_based_workout(avg_distance, avg_time)
+        
+        # Show either time or distance, never both
+        if is_distance_based:
+            description = f"{count} x {distance_str}"
+        else:
+            # Time-based description (default)
+            description = f"{count} x {time_str}"
 
-        # Add average time if significant
-        if avg_time > 30:  # Only add time if longer than 30 seconds
-            description += f" (avg {time_str})"
-
-        # Add rest information if detected
+        # Add recovery information if detected
         if rest_periods:
-            avg_rest = statistics.mean([r['time'] for r in rest_periods])
-            rest_minutes = int(avg_rest // 60)
-            rest_seconds = int(avg_rest % 60)
-
-            if rest_minutes > 0:
-                rest_str = f"{rest_minutes}:{rest_seconds:02d}"
+            rest_period = rest_periods[0]  # Take first/average rest period
+            avg_rest_time = rest_period['time']
+            avg_rest_distance = rest_period.get('distance', 0)
+            
+            # Determine if recovery should be described by time or distance
+            recovery_is_distance_based = self._is_distance_based_workout(avg_rest_distance, avg_rest_time)
+            
+            if recovery_is_distance_based:
+                # Distance-based recovery
+                if avg_rest_distance >= 1000:
+                    recovery_str = f"{avg_rest_distance/1000:.1f}km"
+                else:
+                    recovery_str = f"{int(avg_rest_distance)}m"
             else:
-                rest_str = f"{rest_seconds}s"
-
-            description += f" w/ {rest_str} rest"
+                # Time-based recovery (default)
+                rest_minutes = int(avg_rest_time // 60)
+                rest_seconds = int(avg_rest_time % 60)
+                
+                if rest_minutes > 0:
+                    recovery_str = f"{rest_minutes}:{rest_seconds:02d}"
+                else:
+                    recovery_str = f"{rest_seconds}s"
+            
+            description += f" w/ {recovery_str} recovery"
 
         return description
+    
+    def _is_distance_based_workout(self, avg_distance: float, avg_time: int) -> bool:
+        """
+        Determine if workout is clearly distance-based rather than time-based
+        Returns True for distance-based workouts
+        """
+        # Standard track/road distances (meters)
+        standard_distances = [
+            100, 200, 300, 400, 600, 800, 1000, 1200, 1500, 1600, 1609,  # Track/mile
+            2000, 3000, 5000, 10000  # Road distances
+        ]
+        
+        # Check if average distance is close to a standard distance
+        for std_dist in standard_distances:
+            if abs(avg_distance - std_dist) / std_dist < 0.1:  # Within 10%
+                return True
+        
+        # Check for round distances (e.g., 500m, 750m, 2500m)
+        # Round to nearest 50m and see if it's close to original
+        rounded_distance = round(avg_distance / 50) * 50
+        if abs(avg_distance - rounded_distance) / avg_distance < 0.1:
+            # If it rounds to a "nice" number, likely distance-based
+            if rounded_distance % 100 == 0 or rounded_distance % 50 == 0:
+                return True
+        
+        # Additional check: very short intervals (<20 seconds) are usually time-based
+        if avg_time < 20:
+            return False
+        
+        # Default: assume time-based (removed long interval check)
+        return False
 
     def _calculate_confidence(self, interval_laps: List[Lap], all_laps: List[Lap]) -> float:
         """Calculate confidence score for the detected pattern"""
@@ -433,7 +673,7 @@ def analyze_workout_from_laps(laps: List[Lap], activity_name: str = "",
         detected_patterns=patterns,
         primary_pattern=primary_pattern,
         short_description=short_desc,
-        detailed_description=f"{detailed_desc}. Total: {total_distance/1000:.1f}km in {total_time//60}:{total_time % 60:02d}",
+        detailed_description=f"{detailed_desc}. Total: {total_distance/1000:.1f}km in {total_time//60}:{total_time % 60:02.0f}",
         analysis_method="laps",
         confidence=primary_pattern.confidence if primary_pattern else 0.1
     )

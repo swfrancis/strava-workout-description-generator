@@ -230,14 +230,25 @@ class LapAnalyzer:
         return rest_periods
     
     def _format_time(self, seconds: float) -> str:
-        """Format seconds into MM:SS or SS format"""
-        minutes = int(seconds // 60)
-        secs = int(seconds % 60)
+        """Format seconds into MM:SS or SS format with rounding"""
+        rounded_seconds = self._round_time(seconds)
+        minutes = int(rounded_seconds // 60)
+        secs = int(rounded_seconds % 60)
         
         if minutes > 0:
             return f"{minutes}:{secs:02d}"
         else:
             return f"{secs}s"
+    
+    def _round_time(self, seconds: float) -> float:
+        """
+        Round time to nearest 5 seconds for times over 10 seconds
+        Keep exact seconds for times <= 10 seconds
+        """
+        if seconds <= 10:
+            return round(seconds)  # Round to nearest second for short intervals
+        else:
+            return round(seconds / 5) * 5  # Round to nearest 5 seconds for longer intervals
 
     def _laps_are_similar(self, lap1: Lap, lap2: Lap) -> bool:
         """Check if two laps are similar in distance and time"""
@@ -508,9 +519,10 @@ class LapAnalyzer:
         else:
             distance_str = f"{int(avg_distance)}m"
 
-        # Format time
-        minutes = int(avg_time // 60)
-        seconds = int(avg_time % 60)
+        # Format time with rounding for intervals > 10 seconds
+        rounded_time = self._round_time(avg_time)
+        minutes = int(rounded_time // 60)
+        seconds = int(rounded_time % 60)
         if minutes > 0:
             time_str = f"{minutes}:{seconds:02d}"
         else:
@@ -542,9 +554,10 @@ class LapAnalyzer:
                 else:
                     recovery_str = f"{int(avg_rest_distance)}m"
             else:
-                # Time-based recovery (default)
-                rest_minutes = int(avg_rest_time // 60)
-                rest_seconds = int(avg_rest_time % 60)
+                # Time-based recovery (default) with rounding
+                rounded_rest_time = self._round_time(avg_rest_time)
+                rest_minutes = int(rounded_rest_time // 60)
+                rest_seconds = int(rounded_rest_time % 60)
                 
                 if rest_minutes > 0:
                     recovery_str = f"{rest_minutes}:{rest_seconds:02d}"

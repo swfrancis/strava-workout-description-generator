@@ -30,17 +30,26 @@
                     Connect once, and every workout gets a detailed description added.
                 </p>
                 
-                <div class="hero-example">
-                    <div class="before-after">
-                        <div class="example-card before">
-                            <h4>Before (Empty Description)</h4>
-                            <p class="empty-state">No description</p>
-                        </div>
-                        <div class="arrow">→</div>
-                        <div class="example-card after">
-                            <h4>After (Auto-Generated)</h4>
-                            <p>"5 x 1km @ 3:45min/km w/ 90s recovery"</p>
-                        </div>
+                <div class="hero-capabilities">
+                    <div class="capability-card">
+                        <div class="capability-icon">⏱️</div>
+                        <h3>Time Intervals</h3>
+                        <p class="capability-desc">Detects time-based intervals and fartlek training</p>
+                        <div class="example-output">"6 x 30s w/ 2min recovery"</div>
+                    </div>
+
+                    <div class="capability-card">
+                        <div class="capability-icon">📏</div>
+                        <h3>Distance Intervals</h3>
+                        <p class="capability-desc">Recognises distance-based intervals</p>
+                        <div class="example-output">"8 x 400m w/ 90s recovery"</div>
+                    </div>
+                    
+                    <div class="capability-card">
+                        <div class="capability-icon">🎯</div>
+                        <h3>Complex Patterns</h3>
+                        <p class="capability-desc">Identifies pyramids, ladders, and other complex workouts</p>
+                        <div class="example-output">"3 x (800m, 600m, 400m)"</div>
                     </div>
                 </div>
                 
@@ -53,35 +62,6 @@
             </div>
         </header>
 
-        <!-- Features Section -->
-        <section class="features">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h3>Smart Detection</h3>
-                    <p>Automatically detects intervals, tempo runs, and complex workout patterns from your lap data.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Instant Processing</h3>
-                    <p>Descriptions are generated and added to your activities within seconds of completing your workout.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Coach-Quality</h3>
-                    <p>Professional descriptions that coaches and training partners will understand immediately.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3>Set & Forget</h3>
-                    <p>Connect once and never think about it again. Every workout gets automatically enhanced.</p>
-                </div>
-            </div>
-        </section>
-
         <!-- How It Works -->
         <section class="how-it-works">
             <h2>How It Works</h2>
@@ -89,55 +69,19 @@
                 <div class="step">
                     <div class="step-number">1</div>
                     <h3>Connect Your Strava</h3>
-                    <p>Authorize our app to access your Strava activities with a secure OAuth connection.</p>
+                    <p>Authorise our app once and never think about it again.</p>
                 </div>
                 
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3>We Set Up Automation</h3>
-                    <p>Our system automatically monitors your new activities using Strava webhooks.</p>
+                    <h3>Instant Analysis</h3>
+                    <p>Each workout is analysed for intervals within seconds of completion, while ignoring constant runs.</p>
                 </div>
                 
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h3>Instant Analysis</h3>
-                    <p>Each workout is analyzed for intervals, pace, and structure within seconds of completion.</p>
-                </div>
-                
-                <div class="step">
-                    <div class="step-number">4</div>
                     <h3>Auto-Added Descriptions</h3>
-                    <p>Professional workout descriptions are automatically added to your Strava activities.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Examples -->
-        <section class="examples">
-            <h2>Example Transformations</h2>
-            <div class="examples-grid">
-                <div class="example">
-                    <div class="workout-type">Interval Training</div>
-                    <div class="transformation">
-                        <div class="original">Empty description</div>
-                        <div class="generated">"8 x 400m @ 1:25min w/ 90s recovery"</div>
-                    </div>
-                </div>
-                
-                <div class="example">
-                    <div class="workout-type">Tempo Run</div>
-                    <div class="transformation">
-                        <div class="original">Empty description</div>
-                        <div class="generated">"5km warmup + 3 x 2km @ 4:10min/km w/ 2min recovery + 2km cooldown"</div>
-                    </div>
-                </div>
-                
-                <div class="example">
-                    <div class="workout-type">Mile Repeats</div>
-                    <div class="transformation">
-                        <div class="original">Empty description</div>
-                        <div class="generated">"4 x 1 mile @ 5:45min/mile w/ 3min recovery"</div>
-                    </div>
+                    <p>Professional and easy to understand workout descriptions are automatically added to your Strava activities.</p>
                 </div>
             </div>
         </section>

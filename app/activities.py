@@ -9,6 +9,7 @@ from .models import (
     ActivityResponse, AnalysisResponse, AnalysisRequest,
     ActivitySummary, WorkoutAnalysis
 )
+from .analysis import analyze_workout_from_laps
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -268,35 +269,56 @@ async def analyze_activity(
         laps_data = summary_data.get('laps', [])
         streams_data = summary_data.get('streams', {})
         
-        # Basic analysis (placeholder - would implement ML logic here)
-        analysis = WorkoutAnalysis(
-            activity_id=activity_id,
-            activity_name=activity_data.get('name', 'Untitled Activity'),
-            activity_type=activity_data.get('type', 'Unknown'),
-            total_distance=activity_data.get('distance', 0),
-            total_time=activity_data.get('elapsed_time', 0),
-            has_laps=len(laps_data) > 0,
-            lap_count=len(laps_data),
-            short_description=f"{activity_data.get('type', 'Activity')} - {activity_data.get('distance', 0)/1000:.1f}km in {activity_data.get('elapsed_time', 0)//60}min",
-            detailed_description=f"Completed a {activity_data.get('distance', 0)/1000:.1f}km {activity_data.get('type', 'activity').lower()} with {len(laps_data)} laps.",
-            analysis_method="basic",
-            confidence=0.5  # Low confidence for basic analysis
-        )
-        
-        # Add lap analysis if available
+        # Try lap-based analysis first
+        analysis = None
         if laps_data:
-            lap_times = [lap.get('elapsed_time', 0) for lap in laps_data]
-            lap_distances = [lap.get('distance', 0) for lap in laps_data]
-            if lap_times and lap_distances:
-                avg_lap_time = sum(lap_times) / len(lap_times)
-                avg_lap_distance = sum(lap_distances) / len(lap_distances)
-                analysis.lap_analysis = f"Average lap: {avg_lap_time//60}:{avg_lap_time%60:02.0f} over {avg_lap_distance/1000:.2f}km"
+            # Convert lap data to Lap objects
+            lap_objects = []
+            for lap_data in laps_data:
+                try:
+                    lap = Lap(**lap_data)
+                    lap_objects.append(lap)
+                except Exception as e:
+                    print(f"Error parsing lap data for analysis: {e}")
+                    continue
+            
+            # Analyze laps for interval patterns
+            if lap_objects:
+                analysis = analyze_workout_from_laps(
+                    lap_objects,
+                    activity_data.get('name', 'Untitled Activity'),
+                    activity_data.get('type', 'Unknown')
+                )
+                if analysis:
+                    analysis.activity_id = activity_id
+        
+        # Fallback to basic analysis if no lap analysis
+        if not analysis:
+            analysis = WorkoutAnalysis(
+                activity_id=activity_id,
+                activity_name=activity_data.get('name', 'Untitled Activity'),
+                activity_type=activity_data.get('type', 'Unknown'),
+                total_distance=activity_data.get('distance', 0),
+                total_time=activity_data.get('elapsed_time', 0),
+                has_laps=len(laps_data) > 0,
+                lap_count=len(laps_data),
+                short_description=f"{activity_data.get('type', 'Activity')} - {activity_data.get('distance', 0)/1000:.1f}km in {activity_data.get('elapsed_time', 0)//60}min",
+                detailed_description=f"Completed a {activity_data.get('distance', 0)/1000:.1f}km {activity_data.get('type', 'activity').lower()} with {len(laps_data)} laps.",
+                analysis_method="basic",
+                confidence=0.3  # Low confidence for basic analysis
+            )
+        
+        # Set appropriate message based on analysis method
+        if analysis.analysis_method == "laps":
+            message = f"Lap-based analysis completed. Detected: {analysis.short_description}"
+        else:
+            message = "Basic analysis completed. No interval pattern detected."
         
         return AnalysisResponse(
             activity_id=activity_id,
             analysis=analysis,
             success=True,
-            message="Basic analysis completed. Advanced pattern detection coming soon."
+            message=message
         )
         
     except StravaAPIError as e:

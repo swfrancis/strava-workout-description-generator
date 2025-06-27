@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strava Workout Description Generator</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-content">
+                <div class="logo">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <path d="M24 4L32 16H16L24 4Z" fill="#FC4C02"/>
+                        <path d="M16 16H32L28 24H20L16 16Z" fill="#FC4C02" opacity="0.8"/>
+                        <path d="M20 24H28L24 32L20 24Z" fill="#FC4C02" opacity="0.6"/>
+                        <circle cx="24" cy="36" r="8" fill="#FC4C02" opacity="0.4"/>
+                    </svg>
+                    <span>StravaAI</span>
+                </div>
+                
+                <h1>Intelligent Workout Descriptions</h1>
+                <p class="hero-subtitle">
+                    Automatically generate professional workout descriptions for your Strava activities. 
+                    Connect once, and every workout gets a detailed analysis.
+                </p>
+                
+                <div class="hero-example">
+                    <div class="before-after">
+                        <div class="example-card before">
+                            <h4>Before</h4>
+                            <p>"Morning Run"</p>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="example-card after">
+                            <h4>After</h4>
+                            <p>"5 x 1km @ 3:45min/km w/ 90s recovery"</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="cta-button" onclick="connectStrava()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7 14.828h4.172"/>
+                    </svg>
+                    Connect with Strava
+                </button>
+            </div>
+        </header>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Smart Detection</h3>
+                    <p>Automatically detects intervals, tempo runs, and complex workout patterns from your lap data.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Instant Processing</h3>
+                    <p>Descriptions are generated and updated within seconds of completing your workout.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Coach-Quality</h3>
+                    <p>Professional descriptions that coaches and training partners will understand immediately.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Set & Forget</h3>
+                    <p>Connect once and never think about it again. Every workout gets automatically enhanced.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="how-it-works">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Connect Your Strava</h3>
+                    <p>Authorize our app to access your Strava activities with a secure OAuth connection.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>We Set Up Automation</h3>
+                    <p>Our system automatically monitors your new activities using Strava webhooks.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Instant Analysis</h3>
+                    <p>Each workout is analyzed for intervals, pace, and structure within seconds of completion.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Auto-Updated Descriptions</h3>
+                    <p>Your Strava activity descriptions are automatically updated with detailed workout summaries.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Examples -->
+        <section class="examples">
+            <h2>Example Transformations</h2>
+            <div class="examples-grid">
+                <div class="example">
+                    <div class="workout-type">Interval Training</div>
+                    <div class="transformation">
+                        <div class="original">"Track workout"</div>
+                        <div class="generated">"8 x 400m @ 1:25min w/ 90s recovery"</div>
+                    </div>
+                </div>
+                
+                <div class="example">
+                    <div class="workout-type">Tempo Run</div>
+                    <div class="transformation">
+                        <div class="original">"Long run"</div>
+                        <div class="generated">"5km warmup + 3 x 2km @ 4:10min/km w/ 2min recovery + 2km cooldown"</div>
+                    </div>
+                </div>
+                
+                <div class="example">
+                    <div class="workout-type">Mile Repeats</div>
+                    <div class="transformation">
+                        <div class="original">"Tuesday workout"</div>
+                        <div class="generated">"4 x 1 mile @ 5:45min/mile w/ 3min recovery"</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="final-cta">
+            <h2>Ready to Enhance Your Training Log?</h2>
+            <p>Join hundreds of athletes who never write workout descriptions manually again.</p>
+            <button class="cta-button secondary" onclick="connectStrava()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7 14.828h4.172"/>
+                </svg>
+                Get Started Now
+            </button>
+        </section>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <h3>Connecting to Strava...</h3>
+            <p>Please complete the authorization in the popup window.</p>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

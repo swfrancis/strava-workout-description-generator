@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 import requests
 import os
 from urllib.parse import urlencode
@@ -54,19 +54,47 @@ async def callback(code: str = Query(...), scope: str = Query(None)):
         expires_at = token_info.get("expires_at")
         athlete_info = token_info.get("athlete", {})
         
-        return {
-            "message": "Authentication successful",
-            "athlete": {
-                "id": athlete_info.get("id"),
-                "firstname": athlete_info.get("firstname"),
-                "lastname": athlete_info.get("lastname")
-            },
-            "access_token": access_token,
-            "expires_at": expires_at
-        }
+        # Redirect to success page with token (for popup flow)
+        success_url = f"/auth/success?access_token={access_token}&athlete_id={athlete_info.get('id')}&expires_at={expires_at}"
+        return RedirectResponse(url=success_url)
         
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=400, detail=f"Failed to exchange code for token: {str(e)}")
+
+@router.get("/success")
+async def success_page(access_token: str = Query(...), athlete_id: str = Query(...), expires_at: int = Query(...)):
+    """Success page after Strava authentication"""
+    return HTMLResponse(content=f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Connected Successfully!</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+            .success {{ color: #22c55e; font-size: 2em; margin-bottom: 20px; }}
+            .message {{ font-size: 1.2em; margin-bottom: 30px; }}
+            .close-btn {{ background: #FC4C02; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }}
+        </style>
+    </head>
+    <body>
+        <div class="success">✅ Success!</div>
+        <div class="message">Your Strava account is now connected!</div>
+        <button class="close-btn" onclick="window.close()">Close Window</button>
+        <script>
+            // Notify parent window of success
+            if (window.opener) {{
+                window.opener.postMessage({{ 
+                    type: 'strava_auth_success', 
+                    access_token: '{access_token}',
+                    athlete_id: '{athlete_id}',
+                    expires_at: {expires_at}
+                }}, '*');
+                setTimeout(() => window.close(), 2000);
+            }}
+        </script>
+    </body>
+    </html>
+    """)
 
 @router.post("/refresh")
 async def refresh_token(refresh_token: str):

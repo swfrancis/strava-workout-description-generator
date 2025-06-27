@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 import os
 from app.auth import router as auth_router
@@ -21,12 +23,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Include API routers
 app.include_router(auth_router)
 app.include_router(activities_router)
 
 @app.get("/")
 async def root():
-    return {"message": "Strava Workout Description Generator API"}
+    """Serve the main landing page"""
+    return FileResponse("static/index.html")
 
 @app.get("/health")
 async def health_check():

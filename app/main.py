@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 from app.auth import router as auth_router
 from app.activities import router as activities_router
+from app.webhooks import router as webhooks_router
 
 load_dotenv()
 
@@ -35,6 +36,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Include API routers
 app.include_router(auth_router)
 app.include_router(activities_router)
+app.include_router(webhooks_router)
 
 @app.get("/")
 async def root():

@@ -139,17 +139,14 @@ function showSuccessPage() {
                 </div>
                 
                 <div class="success-actions">
-                    <button class="cta-button" onclick="testWithRecentActivity()">
-                        Test with Recent Activity
-                    </button>
                     <button class="cta-button secondary" onclick="goToStrava()">
-                        View on Strava
+                        View Your Strava Profile
                     </button>
                 </div>
                 
                 <div class="webhook-status">
-                    <div class="status-indicator"></div>
-                    <span>Webhook monitoring: Active</span>
+                    <div class="status-indicator active"></div>
+                    <span>Automatic processing: Active</span>
                 </div>
             </div>
         </div>
@@ -158,85 +155,9 @@ function showSuccessPage() {
     // Replace page content
     document.body.innerHTML = successHtml;
     
-    // Add success page styles
-    addSuccessPageStyles();
+    // No additional styles needed - CSS is already included
 }
 
-// Test with recent activity
-function testWithRecentActivity() {
-    showLoadingModal('Testing with your most recent activity...');
-    
-    // Get access token from URL or storage
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('access_token') || localStorage.getItem('strava_token');
-    
-    if (!token) {
-        hideLoadingModal();
-        showError('No access token found. Please reconnect.');
-        return;
-    }
-    
-    // Call API to test analysis
-    fetch('/activities/recent?access_token=' + token + '&days=7')
-        .then(response => response.json())
-        .then(data => {
-            if (data.activities && data.activities.length > 0) {
-                const latestActivity = data.activities[0];
-                return analyseActivity(latestActivity.id, token);
-            } else {
-                throw new Error('No recent activities found');
-            }
-        })
-        .then(result => {
-            hideLoadingModal();
-            showAnalysisResult(result);
-        })
-        .catch(error => {
-            hideLoadingModal();
-            showError('Test failed: ' + error.message);
-        });
-}
-
-// Analyse activity
-function analyseActivity(activityId, token) {
-    return fetch(`/activities/${activityId}/analyse?access_token=${token}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            activity_id: activityId,
-            include_streams: true,
-            analysis_type: 'auto',
-            generate_description: true,
-            update_activity: false
-        })
-    }).then(response => response.json());
-}
-
-// Show analysis result
-function showAnalysisResult(result) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content analysis-result">
-            <h3>Analysis Complete!</h3>
-            <div class="result-details">
-                <p><strong>Activity:</strong> ${result.analysis?.activity_name || 'Unknown'}</p>
-                <p><strong>Analysis Method:</strong> ${result.analysis?.analysis_method || 'basic'}</p>
-                <p><strong>Confidence:</strong> ${Math.round((result.analysis?.confidence || 0) * 100)}%</p>
-                <div class="description-result">
-                    <h4>Generated Description:</h4>
-                    <p class="generated-desc">${result.analysis?.short_description || 'No pattern detected'}</p>
-                </div>
-            </div>
-            <button class="cta-button" onclick="this.parentElement.parentElement.remove()">
-                Close
-            </button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
 
 // Go to Strava
 function goToStrava() {

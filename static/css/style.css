@@ -500,6 +500,122 @@ body {
     }
 }
 
+/* Success Page Styles */
+.success-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    padding: 40px 20px;
+}
+
+.success-content {
+    text-align: center;
+    max-width: 600px;
+    background: white;
+    padding: 60px 40px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-hover);
+}
+
+.success-icon {
+    font-size: 4rem;
+    margin-bottom: 24px;
+}
+
+.success-content h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.success-content > p {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+}
+
+.success-details {
+    background: var(--background-light);
+    padding: 32px;
+    border-radius: var(--border-radius);
+    margin-bottom: 40px;
+    text-align: left;
+}
+
+.success-details h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.success-details ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.success-details li {
+    margin-bottom: 12px;
+    padding-left: 28px;
+    position: relative;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.success-details li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.success-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.webhook-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ccc;
+}
+
+.status-indicator.active {
+    background: #4CAF50;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.webhook-status span {
+    color: #2E7D32;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
 @media (max-width: 480px) {
     .example-card {
         min-width: auto;
@@ -518,5 +634,22 @@ body {
     .capabilities-intro {
         font-size: 1.1rem;
         margin-bottom: 40px;
+    }
+    
+    .success-content {
+        padding: 40px 24px;
+    }
+    
+    .success-content h1 {
+        font-size: 2rem;
+    }
+    
+    .success-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .hero-capabilities {
+        flex-direction: column;
     }
 }

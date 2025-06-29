@@ -243,3 +243,30 @@ class AnalysisRequest(BaseModel):
     analysis_type: str = "auto"  # auto, laps, ml, splits
     generate_description: bool = True
     update_activity: bool = False
+
+# User and Webhook Models
+class User(BaseModel):
+    """User account with Strava tokens"""
+    strava_athlete_id: int
+    access_token: str
+    refresh_token: str
+    expires_at: int
+    created_at: datetime
+    updated_at: datetime
+
+class WebhookEvent(BaseModel):
+    """Strava webhook event payload"""
+    object_type: str  # "activity" or "athlete"
+    object_id: int
+    aspect_type: str  # "create", "update", "delete"
+    owner_id: int  # athlete ID
+    subscription_id: int
+    event_time: int
+
+class WebhookSubscription(BaseModel):
+    """Webhook subscription details"""
+    id: int
+    application_id: int
+    callback_url: str
+    created_at: datetime
+    updated_at: datetime

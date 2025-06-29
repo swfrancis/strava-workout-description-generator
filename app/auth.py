@@ -3,6 +3,10 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 import requests
 import os
 from urllib.parse import urlencode
+from datetime import datetime
+
+from .models import User
+from .user_storage import UserStorage
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -48,11 +52,22 @@ async def callback(code: str = Query(...), scope: str = Query(None)):
         
         token_info = response.json()
         
-        # Store token info (in production, save to database)
+        # Store token info
         access_token = token_info.get("access_token")
         refresh_token = token_info.get("refresh_token")
         expires_at = token_info.get("expires_at")
         athlete_info = token_info.get("athlete", {})
+        
+        # Save user to storage
+        user = User(
+            strava_athlete_id=athlete_info.get("id"),
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_at=expires_at,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        UserStorage.save_user(user)
         
         # Redirect to success page with token (for popup flow)
         success_url = f"/auth/success?access_token={access_token}&athlete_id={athlete_info.get('id')}&expires_at={expires_at}"

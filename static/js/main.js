@@ -132,7 +132,7 @@ function showSuccessPage() {
                     <h3>What happens next?</h3>
                     <ul>
                         <li>We've set up automatic monitoring of your new activities</li>
-                        <li>Every workout will be analyzed within seconds of completion</li>
+                        <li>Every workout will be analysed within seconds of completion</li>
                         <li>Professional descriptions will be automatically added to your activities</li>
                         <li>You can close this page and forget about it!</li>
                     </ul>
@@ -182,7 +182,7 @@ function testWithRecentActivity() {
         .then(data => {
             if (data.activities && data.activities.length > 0) {
                 const latestActivity = data.activities[0];
-                return analyzeActivity(latestActivity.id, token);
+                return analyseActivity(latestActivity.id, token);
             } else {
                 throw new Error('No recent activities found');
             }
@@ -197,9 +197,9 @@ function testWithRecentActivity() {
         });
 }
 
-// Analyze activity
-function analyzeActivity(activityId, token) {
-    return fetch(`/activities/${activityId}/analyze?access_token=${token}`, {
+// Analyse activity
+function analyseActivity(activityId, token) {
+    return fetch(`/activities/${activityId}/analyse?access_token=${token}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

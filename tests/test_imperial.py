@@ -8,7 +8,7 @@ import os
 # Add parent directory to path to import app modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.analysis import LapAnalyzer
+from app.analysis import LapAnalyser
 from app.models import Lap
 
 def test_imperial_distance_detection():
@@ -16,7 +16,7 @@ def test_imperial_distance_detection():
     print("🧪 Testing Imperial Distance Detection")
     print("=" * 50)
     
-    analyzer = LapAnalyzer()
+    analyser = LapAnalyser()
     
     # Test distances in meters
     test_cases = [

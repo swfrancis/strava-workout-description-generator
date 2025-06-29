@@ -32,7 +32,7 @@ async def callback(code: str = Query(...), scope: str = Query(None)):
     """Handle Strava OAuth callback and exchange code for access token"""
     
     if not code:
-        raise HTTPException(status_code=400, detail="Authorization code not provided")
+        raise HTTPException(status_code=400, detail="Authorisation code not provided")
     
     # Exchange authorization code for access token
     token_data = {

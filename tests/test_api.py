@@ -147,10 +147,10 @@ def test_api_endpoints(access_token: str, base_url: str = "http://localhost:8000
         print(f"❌ Request failed: {e}")
         return False
     
-    # Test 6: Analyze activity
-    print(f"\n6️⃣ Testing POST /activities/{test_activity_id}/analyze")
+    # Test 6: Analyse activity
+    print(f"\n6️⃣ Testing POST /activities/{test_activity_id}/analyse")
     try:
-        response = requests.post(f"{base_url}/activities/{test_activity_id}/analyze", 
+        response = requests.post(f"{base_url}/activities/{test_activity_id}/analyse", 
             params={"access_token": access_token},
             json={
                 "activity_id": test_activity_id,

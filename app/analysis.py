@@ -3,17 +3,17 @@ from .models import Lap, WorkoutPattern, WorkoutAnalysis
 import statistics
 
 
-class LapAnalyzer:
-    """Analyzes lap data to detect interval patterns"""
+class LapAnalyser:
+    """Analyses lap data to detect interval patterns"""
 
     def __init__(self):
         self.min_interval_count = 2  # Minimum intervals to consider a pattern
         self.distance_tolerance = 0.15  # 15% tolerance for distance grouping (more lenient)
         self.time_tolerance = 0.15  # 15% tolerance for time grouping (more lenient)
 
-    def analyze_laps(self, laps: List[Lap]) -> List[WorkoutPattern]:
+    def analyse_laps(self, laps: List[Lap]) -> List[WorkoutPattern]:
         """
-        Analyze laps to detect interval patterns
+        Analyse laps to detect interval patterns
         Returns a list of WorkoutPatterns if intervals are detected, empty list otherwise
         """
         if len(laps) < self.min_interval_count:
@@ -709,17 +709,17 @@ class LapAnalyzer:
         return min(1.0, max(0.1, confidence))
 
 
-def analyze_workout_from_laps(laps: List[Lap], activity_name: str = "",
+def analyse_workout_from_laps(laps: List[Lap], activity_name: str = "",
                               activity_type: str = "") -> Optional[WorkoutAnalysis]:
     """
-    Main function to analyze workout from lap data
+    Main function to analyse workout from lap data
     Returns WorkoutAnalysis if patterns detected, None otherwise
     """
     if not laps:
         return None
 
-    analyzer = LapAnalyzer()
-    patterns = analyzer.analyze_laps(laps)
+    analyser = LapAnalyser()
+    patterns = analyser.analyse_laps(laps)
 
     if not patterns:
         return None

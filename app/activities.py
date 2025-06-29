@@ -9,7 +9,7 @@ from .models import (
     ActivityResponse, AnalysisResponse, AnalysisRequest,
     ActivitySummary, WorkoutAnalysis
 )
-from .analysis import analyze_workout_from_laps
+from .analysis import analyse_workout_from_laps
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -252,8 +252,8 @@ async def get_activity_summary(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
-@router.post("/{activity_id}/analyze", response_model=AnalysisResponse)
-async def analyze_activity(
+@router.post("/{activity_id}/analyse", response_model=AnalysisResponse)
+async def analyse_activity(
     activity_id: int,
     request: AnalysisRequest,
     access_token: str = Query(..., description="Strava access token")
@@ -284,7 +284,7 @@ async def analyze_activity(
             
             # Analyze laps for interval patterns
             if lap_objects:
-                analysis = analyze_workout_from_laps(
+                analysis = analyse_workout_from_laps(
                     lap_objects,
                     activity_data.get('name', 'Untitled Activity'),
                     activity_data.get('type', 'Unknown')

@@ -15,11 +15,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Configure CORS - restrict in production
+allowed_origins = ["*"] if os.getenv("RAILWAY_ENVIRONMENT") != "production" else [
+    "https://*.railway.app",
+    "https://your-domain.com"  # Replace with your actual domain
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 

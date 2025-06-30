@@ -1,0 +1,17 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Heart rate / effort pulse wave -->
+  <path d="M2 24 L8 24 L10 16 L12 32 L14 12 L16 36 L18 8 L20 40 L22 20 L26 28 L30 20 L32 32 L34 16 L36 36 L38 12 L40 32 L42 20 L46 24" 
+        stroke="#FC4C02" 
+        stroke-width="2.5" 
+        fill="none" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Subtle background pulse -->
+  <path d="M2 24 L8 24 L10 20 L12 28 L14 18 L16 30 L18 16 L20 32 L22 22 L26 26 L30 22 L32 28 L34 20 L36 30 L38 18 L40 28 L42 22 L46 24" 
+        stroke="#FC4C02" 
+        stroke-width="1" 
+        fill="none" 
+        opacity="0.3"
+        stroke-linecap="round"/>
+</svg>

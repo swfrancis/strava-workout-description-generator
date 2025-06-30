@@ -163,8 +163,9 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    line-height: 1.1;
+    line-height: 1.3;
     letter-spacing: -0.02em;
+    padding: 0.1em 0;
 }
 
 .hero-subtitle {

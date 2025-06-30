@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#FC4C02">
+    <meta name="description" content="Automatically generate professional workout descriptions for your Strava activities with AI-powered interval detection.">
     <title>Strava Workout Description Generator</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,22 +32,22 @@
                     Connect once, and every workout gets a detailed description added.
                 </p>
                 
-                <div class="hero-capabilities">
-                    <div class="capability-card">
+                <div class="hero-capabilities" role="list">
+                    <div class="capability-card" role="listitem">
                         <div class="capability-icon">⏱️</div>
                         <h3>Time Intervals</h3>
                         <p class="capability-desc">Detects time-based intervals and fartlek training</p>
                         <div class="example-output">"6 x 30s w/ 2min recovery"</div>
                     </div>
 
-                    <div class="capability-card">
+                    <div class="capability-card" role="listitem">
                         <div class="capability-icon">📏</div>
                         <h3>Distance Intervals</h3>
                         <p class="capability-desc">Recognises distance-based intervals</p>
                         <div class="example-output">"8 x 400m w/ 90s recovery"</div>
                     </div>
                     
-                    <div class="capability-card">
+                    <div class="capability-card" role="listitem">
                         <div class="capability-icon">🎯</div>
                         <h3>Complex Patterns</h3>
                         <p class="capability-desc">Identifies pyramids, ladders, and other complex workouts</p>
@@ -53,7 +55,7 @@
                     </div>
                 </div>
                 
-                <button class="cta-button" onclick="connectStrava()">
+                <button class="cta-button primary" onclick="connectStrava()" aria-label="Connect with Strava to start automatic workout descriptions">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7 14.828h4.172"/>
                     </svg>
@@ -65,20 +67,20 @@
         <!-- How It Works -->
         <section class="how-it-works">
             <h2>How It Works</h2>
-            <div class="steps">
-                <div class="step">
+            <div class="steps" role="list">
+                <div class="step" role="listitem">
                     <div class="step-number">1</div>
                     <h3>Connect Your Strava</h3>
                     <p>Authorise our app once and never think about it again.</p>
                 </div>
                 
-                <div class="step">
+                <div class="step" role="listitem">
                     <div class="step-number">2</div>
                     <h3>Instant Analysis</h3>
                     <p>Each workout is analysed for intervals within seconds of completion, while ignoring constant runs.</p>
                 </div>
                 
-                <div class="step">
+                <div class="step" role="listitem">
                     <div class="step-number">3</div>
                     <h3>Auto-Added Descriptions</h3>
                     <p>Professional and easy to understand workout descriptions are automatically added to your Strava activities.</p>
@@ -90,7 +92,7 @@
         <section class="final-cta">
             <h2>Ready to Enhance Your Training Log?</h2>
             <p>Join hundreds of athletes who get professional workout descriptions automatically.</p>
-            <button class="cta-button secondary" onclick="connectStrava()">
+            <button class="cta-button secondary" onclick="connectStrava()" aria-label="Get started with automatic workout descriptions">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7 14.828h4.172"/>
                 </svg>

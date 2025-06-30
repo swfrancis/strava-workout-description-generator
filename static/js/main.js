@@ -17,19 +17,58 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Listen for popup messages
     window.addEventListener('message', handlePopupMessage);
+    
+    // Add keyboard support for CTA buttons
+    document.querySelectorAll('.cta-button').forEach(button => {
+        button.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+    });
+    
+    // Add touch feedback for mobile
+    if ('ontouchstart' in window) {
+        document.querySelectorAll('.cta-button, .capability-card, .step').forEach(el => {
+            el.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            });
+            el.addEventListener('touchend', function() {
+                this.style.transform = '';
+            });
+        });
+    }
+    
+    // Handle window resize for responsive popup sizing
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            // Update any responsive elements if needed
+        }, 150);
+    });
 });
 
 // Main function to connect to Strava
 function connectStrava() {
+    // Add loading state to button
+    const buttons = document.querySelectorAll('.cta-button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.7';
+    });
+    
     showLoadingModal();
     
-    // Open Strava auth in popup
+    // Open Strava auth in popup with mobile-friendly dimensions
     const authUrl = '/auth/login';
-    authWindow = window.open(
-        authUrl, 
-        'stravaAuth', 
-        'width=600,height=700,scrollbars=yes,resizable=yes'
-    );
+    const isMobile = window.innerWidth <= 768;
+    const popupFeatures = isMobile ? 
+        'width=' + Math.min(400, window.innerWidth) + ',height=' + Math.min(600, window.innerHeight) + ',scrollbars=yes' :
+        'width=600,height=700,scrollbars=yes,resizable=yes';
+    
+    authWindow = window.open(authUrl, 'stravaAuth', popupFeatures);
     
     // Monitor the popup for completion
     authCheckInterval = setInterval(checkAuthComplete, 1000);
@@ -96,6 +135,13 @@ function handlePopupMessage(event) {
 // Handle successful authentication
 function handleAuthSuccess() {
     hideLoadingModal();
+    
+    // Reset button states
+    const buttons = document.querySelectorAll('.cta-button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
     
     // Show success message
     showSuccessPage();
@@ -182,6 +228,13 @@ function hideLoadingModal() {
 
 // Show error message
 function showError(message) {
+    // Reset button states
+    const buttons = document.querySelectorAll('.cta-button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+    
     const errorModal = document.createElement('div');
     errorModal.className = 'modal';
     errorModal.innerHTML = `
@@ -189,12 +242,19 @@ function showError(message) {
             <div class="error-icon">❌</div>
             <h3>Connection Failed</h3>
             <p>${message}</p>
-            <button class="cta-button" onclick="this.parentElement.parentElement.remove()">
+            <button class="cta-button" onclick="this.parentElement.parentElement.remove(); location.reload();" aria-label="Close error and try again">
                 Try Again
             </button>
         </div>
     `;
     document.body.appendChild(errorModal);
+    
+    // Auto-close after 10 seconds
+    setTimeout(() => {
+        if (errorModal.parentNode) {
+            errorModal.remove();
+        }
+    }, 10000);
 }
 
 // Add smooth scrolling
@@ -213,8 +273,15 @@ function addSmoothScrolling() {
     });
 }
 
-// Setup scroll animations
+// Setup scroll animations with reduced motion support
 function setupScrollAnimations() {
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (prefersReducedMotion) {
+        return; // Skip animations if user prefers reduced motion
+    }
+    
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -225,12 +292,13 @@ function setupScrollAnimations() {
             if (entry.isIntersecting) {
                 entry.target.style.opacity = '1';
                 entry.target.style.transform = 'translateY(0)';
+                entry.target.classList.add('animate-in');
             }
         });
     }, observerOptions);
     
     // Observe elements for animation
-    document.querySelectorAll('.feature-card, .step, .capability-card').forEach(el => {
+    document.querySelectorAll('.step, .capability-card').forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(20px)';
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';

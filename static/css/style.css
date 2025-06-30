@@ -112,7 +112,7 @@ body {
     min-height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, var(--background-light) 0%, var(--background) 100%);
+    background: var(--background);
     position: relative;
     overflow: hidden;
     padding: clamp(2rem, 8vh, 4rem) 0;
@@ -193,7 +193,7 @@ body {
     box-shadow: var(--shadow);
     transition: all var(--transition-base);
     text-align: center;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
 }
 
 .capability-card:hover {
@@ -301,7 +301,7 @@ body {
 /* How It Works Section */
 .how-it-works {
     padding: clamp(4rem, 12vh, 8rem) 0;
-    background: var(--background-light);
+    background: var(--background);
 }
 
 .how-it-works h2 {
@@ -329,6 +329,7 @@ body {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     transition: transform var(--transition-base);
+    border: 1px solid var(--border);
 }
 
 .step:hover {
@@ -451,7 +452,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--background-light) 0%, var(--background) 100%);
+    background: var(--background);
     padding: clamp(2rem, 8vh, 4rem) clamp(1rem, 4vw, 2rem);
 }
 
@@ -487,7 +488,7 @@ body {
 }
 
 .success-details {
-    background: var(--background-light);
+    background: var(--background-dark);
     padding: clamp(1.5rem, 4vw, 2rem);
     border-radius: var(--border-radius);
     margin-bottom: 2.5rem;

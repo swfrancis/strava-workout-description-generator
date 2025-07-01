@@ -40,12 +40,15 @@ async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
         
         
         event = WebhookEvent(**event_data)
-        logger.info(f"Received webhook: {event.object_type} {event.aspect_type} for athlete {event.owner_id}")
+        logger.info(f"Received webhook: {event.object_type} {event.aspect_type} for athlete {event.owner_id}, object_id: {event.object_id}")
         
         # Only process activity creation events
         if event.object_type == "activity" and event.aspect_type == "create":
+            logger.info(f"Processing activity creation for activity {event.object_id}")
             # Process in background to avoid blocking the webhook
             background_tasks.add_task(process_activity_creation, event)
+        else:
+            logger.info(f"Ignoring webhook: {event.object_type} {event.aspect_type} (not activity creation)")
         
         return {"status": "ok"}
         
@@ -55,6 +58,7 @@ async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
 
 async def process_activity_creation(event: WebhookEvent):
     """Process new activity creation in background"""
+    logger.info(f"Starting background processing for activity {event.object_id}")
     try:
         # Get user from storage
         user = UserStorage.get_user(event.owner_id)

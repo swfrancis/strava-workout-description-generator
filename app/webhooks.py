@@ -92,8 +92,15 @@ async def process_activity_creation(event: WebhookEvent):
         
         # Get lap data
         laps = client.get_activity_laps(event.object_id)
+        logger.info(f"Activity {event.object_id} has {len(laps) if laps else 0} laps")
+        
+        # TEMPORARY: Skip lap requirement for testing
         if not laps or len(laps) < 2:
-            logger.info(f"Activity {event.object_id} has no manual laps - skipping")
+            logger.info(f"Activity {event.object_id} has no manual laps - adding test description anyway")
+            # Add a simple test description
+            test_description = f"🤖 Automatic processing test - Activity {event.object_id}"
+            client.update_activity(event.object_id, description=test_description)
+            logger.info(f"Added test description to activity {event.object_id}")
             return
         
         # Analyse the workout

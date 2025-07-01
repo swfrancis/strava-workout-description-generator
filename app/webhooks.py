@@ -81,8 +81,9 @@ async def process_activity_creation(event: WebhookEvent):
             return
         
         # Only process running/cycling activities
-        if activity.type not in ["Run", "Ride", "VirtualRun", "VirtualRide"]:
-            logger.info(f"Skipping non-running/cycling activity: {activity.type}")
+        activity_type = activity.get("type", "")
+        if activity_type not in ["Run", "Ride", "VirtualRun", "VirtualRide"]:
+            logger.info(f"Skipping non-running/cycling activity: {activity_type}")
             return
         
         # Get lap data
@@ -92,7 +93,8 @@ async def process_activity_creation(event: WebhookEvent):
             return
         
         # Analyse the workout
-        analysis = analyse_workout_from_laps(laps, activity.name, activity.type)
+        activity_name = activity.get("name", "")
+        analysis = analyse_workout_from_laps(laps, activity_name, activity_type)
         if not analysis:
             logger.info(f"No intervals detected in activity {event.object_id}")
             return
@@ -102,7 +104,7 @@ async def process_activity_creation(event: WebhookEvent):
             new_description = analysis.short_description
             
             # Preserve existing description if any
-            existing_description = activity.description or ""
+            existing_description = activity.get("description", "") or ""
             if existing_description and not existing_description.strip().startswith(analysis.short_description[:20]):
                 new_description = f"{analysis.short_description}\n\n{existing_description}"
             

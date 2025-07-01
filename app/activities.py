@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
+import logging
 import os
 from datetime import datetime, timedelta
 
@@ -12,6 +13,7 @@ from .models import (
 from .analysis import analyse_workout_from_laps
 
 router = APIRouter(prefix="/activities", tags=["activities"])
+logger = logging.getLogger(__name__)
 
 def get_strava_client(access_token: str) -> StravaClient:
     """Create Strava client instance with token"""
@@ -54,7 +56,7 @@ async def get_activities(
                 activities.append(activity)
             except Exception as e:
                 # Log validation error but continue with other activities
-                print(f"Error parsing activity {activity_data.get('id', 'unknown')}: {e}")
+                logger.error(f"Error parsing activity {activity_data.get('id', 'unknown')}: {e}")
                 continue
         
         return ActivityListResponse(
@@ -86,7 +88,7 @@ async def get_recent_activities(
                 activity = Activity(**activity_data)
                 activities.append(activity)
             except Exception as e:
-                print(f"Error parsing activity {activity_data.get('id', 'unknown')}: {e}")
+                logger.error(f"Error parsing activity {activity_data.get('id', 'unknown')}: {e}")
                 continue
         
         return ActivityListResponse(
@@ -127,7 +129,7 @@ async def get_activity_details(
                         lap = Lap(**lap_data)
                         laps.append(lap)
                     except Exception as e:
-                        print(f"Error parsing lap data: {e}")
+                        logger.error(f"Error parsing lap data: {e}")
                         continue
             except StravaAPIError:
                 # Laps might not be available for all activities
@@ -173,7 +175,7 @@ async def get_activity_laps(
                 lap = Lap(**lap_data)
                 laps.append(lap)
             except Exception as e:
-                print(f"Error parsing lap data: {e}")
+                logger.error(f"Error parsing lap data: {e}")
                 continue
         
         return {"activity_id": activity_id, "laps": laps, "lap_count": len(laps)}
@@ -232,7 +234,7 @@ async def get_activity_summary(
                 lap = Lap(**lap_data)
                 laps.append(lap)
             except Exception as e:
-                print(f"Error parsing lap data: {e}")
+                logger.error(f"Error parsing lap data: {e}")
                 continue
         
         # Parse streams (basic validation, not full parsing to StreamData models)
@@ -279,7 +281,7 @@ async def analyse_activity(
                     lap = Lap(**lap_data)
                     lap_objects.append(lap)
                 except Exception as e:
-                    print(f"Error parsing lap data for analysis: {e}")
+                    logger.error(f"Error parsing lap data for analysis: {e}")
                     continue
             
             # Analyze laps for interval patterns

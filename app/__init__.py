@@ -1,0 +1,1 @@
+"""Strava Workout Description Generator - FastAPI Application"""

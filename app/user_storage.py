@@ -14,6 +14,8 @@ class UserStorage:
     @staticmethod
     def save_user(user: User) -> None:
         """Save or update user"""
+        if not user or not user.strava_athlete_id:
+            raise ValueError("User and athlete_id are required")
         users_db[user.strava_athlete_id] = user
     
     @staticmethod
@@ -37,6 +39,9 @@ class UserStorage:
     @staticmethod
     def update_tokens(athlete_id: int, access_token: str, refresh_token: str, expires_at: int) -> bool:
         """Update user tokens"""
+        if not athlete_id or not access_token or not refresh_token:
+            raise ValueError("athlete_id, access_token, and refresh_token are required")
+        
         if athlete_id in users_db:
             user = users_db[athlete_id]
             user.access_token = access_token

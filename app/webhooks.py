@@ -1,9 +1,11 @@
 """Strava webhook handling for automatic activity processing"""
 
-from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
-import os
+import asyncio
 import logging
+import os
 import time
+
+from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
 
 from .models import WebhookEvent
 from .user_storage import UserStorage
@@ -81,7 +83,6 @@ async def process_activity_creation(event: WebhookEvent):
         client.athlete_id = event.owner_id
         
         # Wait a bit for Strava to process the activity
-        import asyncio
         await asyncio.sleep(30)  # Give Strava time to process laps
         
         # Get activity details

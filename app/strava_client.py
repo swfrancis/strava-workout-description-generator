@@ -54,13 +54,21 @@ class StravaClient:
             
             # Handle token expiration
             if response.status_code == 401:
+                logger.warning(f"401 Unauthorized for {url}")
+                logger.warning(f"Response: {response.text}")
+                
                 if self.refresh_token and self.client_id and self.client_secret:
-                    logger.info("Access token expired, attempting refresh")
+                    logger.info("Access token unauthorized, attempting refresh")
                     self._refresh_access_token()
                     # Retry the request with new token
                     self._setup_session()
                     response = self.session.request(method, url, **kwargs)
+                    
+                    if response.status_code == 401:
+                        logger.error("Still unauthorized after token refresh")
+                        logger.error(f"Refresh response: {response.text}")
                 else:
+                    logger.error("No refresh token available for 401 error")
                     raise StravaAPIError("Access token expired and no refresh token available")
             
             response.raise_for_status()

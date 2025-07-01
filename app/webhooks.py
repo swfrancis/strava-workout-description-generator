@@ -139,11 +139,12 @@ async def process_activity_creation(event: WebhookEvent):
         if "401" in str(e) or "Unauthorized" in str(e):
             logger.error(f"Authentication failed for athlete {event.owner_id}")
             logger.error(f"User token expires at: {user.expires_at if 'user' in locals() else 'User not found'}")
-            logger.error(f"Current timestamp: {int(time.time())}")
+            
+            current_time = int(time.time())
+            logger.error(f"Current timestamp: {current_time}")
             
             if 'user' in locals() and user:
-                import time
-                if user.expires_at < int(time.time()):
+                if user.expires_at < current_time:
                     logger.error("Token has expired - refresh should have been attempted")
                 else:
                     logger.error("Token not expired - possible scope or authorization issue")

@@ -3,6 +3,7 @@ import time
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -36,46 +37,65 @@ class StravaClient:
             'Content-Type': 'application/json'
         })
     
-    def _make_request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
-        """Make authenticated request to Strava API with error handling"""
+    def _make_request(self, method: str, endpoint: str, max_retries: int = 3, **kwargs) -> Dict[str, Any]:
+        """Make authenticated request to Strava API with error handling and retry logic"""
         url = f"{self.BASE_URL}{endpoint}"
         
-        try:
-            response = self.session.request(method, url, **kwargs)
+        for attempt in range(max_retries + 1):
+            try:
+                response = self.session.request(method, url, **kwargs)
             
-            # Handle rate limiting
-            if response.status_code == 429:
-                rate_limit_reset = response.headers.get('X-RateLimit-Time')
-                if rate_limit_reset:
-                    wait_time = int(rate_limit_reset) - int(time.time())
-                    raise RateLimitError(f"Rate limit exceeded. Reset in {wait_time} seconds")
-                else:
-                    raise RateLimitError("Rate limit exceeded")
-            
-            # Handle token expiration
-            if response.status_code == 401:
-                logger.warning(f"401 Unauthorized for {url}")
-                logger.warning(f"Response: {response.text}")
-                
-                if self.refresh_token and self.client_id and self.client_secret:
-                    logger.info("Access token unauthorized, attempting refresh")
-                    self._refresh_access_token()
-                    # Retry the request with new token
-                    self._setup_session()
-                    response = self.session.request(method, url, **kwargs)
+                # Handle rate limiting with retry
+                if response.status_code == 429:
+                    if attempt == max_retries:
+                        rate_limit_reset = response.headers.get('X-RateLimit-Time')
+                        if rate_limit_reset:
+                            wait_time = int(rate_limit_reset) - int(time.time())
+                            raise RateLimitError(f"Rate limit exceeded after {max_retries} retries. Reset in {wait_time} seconds")
+                        else:
+                            raise RateLimitError(f"Rate limit exceeded after {max_retries} retries")
                     
-                    if response.status_code == 401:
-                        logger.error("Still unauthorized after token refresh")
-                        logger.error(f"Refresh response: {response.text}")
-                else:
-                    logger.error("No refresh token available for 401 error")
-                    raise StravaAPIError("Access token expired and no refresh token available")
+                    # Exponential backoff with jitter
+                    wait_time = min(60, (2 ** attempt) + random.uniform(0, 1))
+                    logger.warning(f"Rate limited, waiting {wait_time:.1f}s before retry {attempt + 1}/{max_retries}")
+                    time.sleep(wait_time)
+                    continue
             
-            response.raise_for_status()
-            return response.json()
-            
-        except requests.exceptions.RequestException as e:
-            raise StravaAPIError(f"API request failed: {str(e)}")
+                # Handle token expiration
+                if response.status_code == 401:
+                    logger.warning(f"401 Unauthorized for {url}")
+                    logger.warning(f"Response: {response.text}")
+                    
+                    if self.refresh_token and self.client_id and self.client_secret:
+                        logger.info("Access token unauthorized, attempting refresh")
+                        self._refresh_access_token()
+                        # Retry the request with new token
+                        self._setup_session()
+                        response = self.session.request(method, url, **kwargs)
+                        
+                        if response.status_code == 401:
+                            logger.error("Still unauthorized after token refresh")
+                            logger.error(f"Refresh response: {response.text}")
+                    else:
+                        logger.error("No refresh token available for 401 error")
+                        raise StravaAPIError("Access token expired and no refresh token available")
+                
+                # Check for other errors and success
+                response.raise_for_status()
+                return response.json()
+                
+            except requests.exceptions.RequestException as e:
+                if attempt == max_retries:
+                    raise StravaAPIError(f"API request failed after {max_retries} retries: {str(e)}")
+                
+                # Exponential backoff for network errors
+                wait_time = min(10, (2 ** attempt) + random.uniform(0, 0.5))
+                logger.warning(f"Request failed, retrying in {wait_time:.1f}s: {str(e)}")
+                time.sleep(wait_time)
+                continue
+        
+        # Should never reach here
+        raise StravaAPIError("Maximum retries exceeded")
     
     def _refresh_access_token(self):
         """Refresh the access token using refresh token"""

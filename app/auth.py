@@ -25,7 +25,7 @@ async def login():
         "response_type": "code",
         "redirect_uri": STRAVA_REDIRECT_URI,
         "approval_prompt": "force",
-        "scope": "read,activity:read_all"
+        "scope": "read,activity:read_all,activity:write"
     }
     
     auth_url = f"{STRAVA_AUTH_URL}?{urlencode(params)}"

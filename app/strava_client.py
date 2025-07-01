@@ -25,6 +25,7 @@ class StravaClient:
         self.refresh_token = refresh_token
         self.client_id = client_id
         self.client_secret = client_secret
+        self.athlete_id = None  # Set externally when needed for token updates
         self.session = requests.Session()
         self._setup_session()
         
@@ -80,16 +81,39 @@ class StravaClient:
         }
         
         try:
+            logger.info(f"Attempting token refresh for client_id: {self.client_id}")
             response = requests.post(token_url, data=token_data)
+            
+            if response.status_code != 200:
+                logger.error(f"Token refresh failed with status {response.status_code}: {response.text}")
+                
             response.raise_for_status()
             
             token_info = response.json()
+            old_token = self.access_token[:10] + "..."
             self.access_token = token_info["access_token"]
             self.refresh_token = token_info["refresh_token"]
+            new_token = self.access_token[:10] + "..."
             
-            logger.info("Access token refreshed successfully")
+            logger.info(f"Access token refreshed successfully: {old_token} -> {new_token}")
+            
+            # Update the user in storage with new tokens if athlete_id is available
+            if hasattr(self, 'athlete_id') and self.athlete_id:
+                from .user_storage import UserStorage
+                expires_at = token_info.get("expires_at", int(time.time()) + 21600)  # Default 6 hours
+                success = UserStorage.update_tokens(
+                    athlete_id=self.athlete_id,
+                    access_token=self.access_token,
+                    refresh_token=self.refresh_token,
+                    expires_at=expires_at
+                )
+                if success:
+                    logger.info(f"Updated stored tokens for athlete {self.athlete_id}")
+                else:
+                    logger.warning(f"Failed to update stored tokens for athlete {self.athlete_id}")
             
         except requests.exceptions.RequestException as e:
+            logger.error(f"Token refresh request failed: {str(e)}")
             raise StravaAPIError(f"Failed to refresh access token: {str(e)}")
     
     def get_athlete(self) -> Dict[str, Any]:

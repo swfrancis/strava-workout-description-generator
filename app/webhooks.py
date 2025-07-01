@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
 import os
 import logging
+import time
 
 from .models import WebhookEvent
 from .user_storage import UserStorage
@@ -63,16 +64,21 @@ async def process_activity_creation(event: WebhookEvent):
         # Get user from storage
         user = UserStorage.get_user(event.owner_id)
         if not user:
-            logger.warning(f"No user found for athlete {event.owner_id}")
+            logger.warning(f"No user found for athlete {event.owner_id}. User must connect their account at https://web-production-6d50.up.railway.app/")
             return
         
-        # Create Strava client
+        logger.info(f"Found user for athlete {event.owner_id}, token expires at {user.expires_at}")
+        
+        # Create Strava client with token refresh capability
         client = StravaClient(
             access_token=user.access_token,
             refresh_token=user.refresh_token,
             client_id=os.getenv("STRAVA_CLIENT_ID"),
             client_secret=os.getenv("STRAVA_CLIENT_SECRET")
         )
+        
+        # Store athlete_id for potential token refresh
+        client.athlete_id = event.owner_id
         
         # Wait a bit for Strava to process the activity
         import asyncio
@@ -127,4 +133,21 @@ async def process_activity_creation(event: WebhookEvent):
             
     except Exception as e:
         logger.error(f"Error processing activity {event.object_id}: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        
+        # Log specific error details for debugging
+        if "401" in str(e) or "Unauthorized" in str(e):
+            logger.error(f"Authentication failed for athlete {event.owner_id}")
+            logger.error(f"User token expires at: {user.expires_at if 'user' in locals() else 'User not found'}")
+            logger.error(f"Current timestamp: {int(time.time())}")
+            
+            if 'user' in locals() and user:
+                import time
+                if user.expires_at < int(time.time()):
+                    logger.error("Token has expired - refresh should have been attempted")
+                else:
+                    logger.error("Token not expired - possible scope or authorization issue")
+        
+        # Re-raise for further handling
+        raise
 

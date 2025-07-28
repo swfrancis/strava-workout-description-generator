@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .strava_client import StravaClient, StravaAPIError
 from .models import (
@@ -54,9 +54,12 @@ async def get_activities(
             try:
                 activity = Activity(**activity_data)
                 activities.append(activity)
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 # Log validation error but continue with other activities
                 logger.error(f"Error parsing activity {activity_data.get('id', 'unknown')}: {e}")
+                continue
+            except Exception as e:
+                logger.error(f"Unexpected error parsing activity {activity_data.get('id', 'unknown')}: {e}")
                 continue
         
         return ActivityListResponse(
@@ -87,8 +90,11 @@ async def get_recent_activities(
             try:
                 activity = Activity(**activity_data)
                 activities.append(activity)
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 logger.error(f"Error parsing activity {activity_data.get('id', 'unknown')}: {e}")
+                continue
+            except Exception as e:
+                logger.error(f"Unexpected error parsing activity {activity_data.get('id', 'unknown')}: {e}")
                 continue
         
         return ActivityListResponse(

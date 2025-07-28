@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if user is returning from auth
     checkAuthCallback();
     
+    // Check for mobile auth return
+    checkMobileAuthReturn();
+    
     // Add smooth scrolling to internal links
     addSmoothScrolling();
     
@@ -52,6 +55,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Main function to connect to Strava
 function connectStrava() {
+    // Detect if mobile device
+    const isMobile = detectMobileDevice();
+    
+    if (isMobile) {
+        // Use direct redirect for mobile
+        connectStravaMobile();
+    } else {
+        // Use popup for desktop
+        connectStravaDesktop();
+    }
+}
+
+// Mobile-friendly direct redirect
+function connectStravaMobile() {
+    // Store current page state
+    localStorage.setItem('auth_flow', 'mobile');
+    localStorage.setItem('return_url', window.location.href);
+    
+    // Show loading state
+    showMobileAuthMessage();
+    
+    // Direct redirect to Strava
+    window.location.href = '/auth/login';
+}
+
+// Desktop popup flow
+function connectStravaDesktop() {
     // Add loading state to button
     const buttons = document.querySelectorAll('.cta-button');
     buttons.forEach(btn => {
@@ -61,22 +91,20 @@ function connectStrava() {
     
     showLoadingModal();
     
-    // Open Strava auth in popup with mobile-friendly dimensions
-    const authUrl = '/auth/login';
-    const isMobile = window.innerWidth <= 768;
-    const popupFeatures = isMobile ? 
-        'width=' + Math.min(400, window.innerWidth) + ',height=' + Math.min(600, window.innerHeight) + ',scrollbars=yes' :
-        'width=600,height=700,scrollbars=yes,resizable=yes';
+    // Open Strava auth in popup
+    const authUrl = '/auth/login?flow=popup';
+    const popupFeatures = 'width=600,height=700,scrollbars=yes,resizable=yes';
     
     authWindow = window.open(authUrl, 'stravaAuth', popupFeatures);
     
     // Monitor the popup for completion
     authCheckInterval = setInterval(checkAuthComplete, 1000);
     
-    // Handle popup blocked
+    // Handle popup blocked - fallback to mobile flow
     if (!authWindow) {
         hideLoadingModal();
-        showError('Popup blocked! Please allow popups and try again.');
+        console.log('Popup blocked, falling back to redirect');
+        connectStravaMobile();
         return;
     }
     
@@ -86,6 +114,7 @@ function connectStrava() {
             if (authWindow.closed) {
                 clearInterval(authCheckInterval);
                 hideLoadingModal();
+                resetButtonStates();
             }
         }, 1000);
     });
@@ -135,13 +164,9 @@ function handlePopupMessage(event) {
 // Handle successful authentication
 function handleAuthSuccess() {
     hideLoadingModal();
-    
-    // Reset button states
-    const buttons = document.querySelectorAll('.cta-button');
-    buttons.forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-    });
+    hideMobileAuthMessage();
+    resetButtonStates();
+    cleanupAuthState();
     
     // Show success message
     showSuccessPage();
@@ -152,15 +177,39 @@ function checkAuthCallback() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('access_token');
     const error = urlParams.get('error');
+    const flow = urlParams.get('flow');
     
     if (error) {
         showError('Authentication failed: ' + error);
+        cleanupAuthState();
         return;
     }
     
     if (token) {
-        // We have a token, show success
+        // Store token data
+        localStorage.setItem('strava_token', token);
+        localStorage.setItem('athlete_id', urlParams.get('athlete_id'));
+        localStorage.setItem('expires_at', urlParams.get('expires_at'));
+        
+        // Clean URL and show success
+        window.history.replaceState({}, document.title, window.location.pathname);
         handleAuthSuccess();
+    }
+}
+
+// Check for mobile auth return
+function checkMobileAuthReturn() {
+    const authFlow = localStorage.getItem('auth_flow');
+    
+    if (authFlow === 'mobile') {
+        // User is returning from mobile auth flow
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('access_token') || urlParams.has('error')) {
+            // Auth completed (success or failure will be handled by checkAuthCallback)
+            localStorage.removeItem('auth_flow');
+            localStorage.removeItem('return_url');
+        }
     }
 }
 
@@ -228,12 +277,7 @@ function hideLoadingModal() {
 
 // Show error message
 function showError(message) {
-    // Reset button states
-    const buttons = document.querySelectorAll('.cta-button');
-    buttons.forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-    });
+    resetButtonStates();
     
     const errorModal = document.createElement('div');
     errorModal.className = 'modal';
@@ -459,4 +503,106 @@ function addSuccessPageStyles() {
     `;
     
     document.head.insertAdjacentHTML('beforeend', styles);
+}
+
+// Utility functions for mobile support
+function detectMobileDevice() {
+    // More comprehensive mobile detection
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isSmallScreen = window.innerWidth <= 768;
+    
+    return isMobileUA || (isTouchDevice && isSmallScreen);
+}
+
+function showMobileAuthMessage() {
+    const messageHtml = `
+        <div id="mobileAuthMessage" class="mobile-auth-overlay">
+            <div class="mobile-auth-content">
+                <div class="spinner"></div>
+                <h3>Redirecting to Strava...</h3>
+                <p>You'll be redirected back here after connecting your account.</p>
+                <button class="cta-button secondary" onclick="cancelMobileAuth()">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', messageHtml);
+    
+    // Add mobile auth styles
+    if (!document.getElementById('mobileAuthStyles')) {
+        const styles = `
+            <style id="mobileAuthStyles">
+            .mobile-auth-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                padding: 20px;
+            }
+            
+            .mobile-auth-content {
+                background: white;
+                padding: 40px 30px;
+                border-radius: 16px;
+                text-align: center;
+                max-width: 400px;
+                width: 100%;
+            }
+            
+            .mobile-auth-content h3 {
+                margin: 20px 0 10px 0;
+                color: var(--text-primary);
+            }
+            
+            .mobile-auth-content p {
+                color: var(--text-secondary);
+                margin-bottom: 30px;
+                line-height: 1.5;
+            }
+            </style>
+        `;
+        document.head.insertAdjacentHTML('beforeend', styles);
+    }
+}
+
+function hideMobileAuthMessage() {
+    const message = document.getElementById('mobileAuthMessage');
+    if (message) {
+        message.remove();
+    }
+}
+
+function cancelMobileAuth() {
+    localStorage.removeItem('auth_flow');
+    localStorage.removeItem('return_url');
+    hideMobileAuthMessage();
+}
+
+function resetButtonStates() {
+    const buttons = document.querySelectorAll('.cta-button');
+    buttons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+    });
+}
+
+function cleanupAuthState() {
+    // Clear any auth-related state
+    if (authCheckInterval) {
+        clearInterval(authCheckInterval);
+        authCheckInterval = null;
+    }
+    
+    if (authWindow && !authWindow.closed) {
+        authWindow.close();
+        authWindow = null;
+    }
 }

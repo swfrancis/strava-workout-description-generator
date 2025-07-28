@@ -574,34 +574,109 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    .hero h1 {
+        font-size: var(--font-size-3xl);
+        line-height: 1.2;
+    }
+    
+    .hero-subtitle {
+        font-size: var(--font-size-lg);
+        line-height: 1.5;
+    }
+    
     .hero-capabilities {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
     
     .steps {
         grid-template-columns: 1fr;
+        gap: 2rem;
     }
     
-    .success-actions {
-        flex-direction: column;
-        align-items: center;
+    .cta-button {
+        font-size: var(--font-size-lg);
+        padding: 1rem 2rem;
+        min-height: 60px;
+        touch-action: manipulation;
     }
     
-    .success-actions .cta-button {
-        width: 100%;
-        max-width: 280px;
-    }
-}
-
-@media (max-width: 480px) {
+    /* Improve touch targets */
     .capability-card,
     .step {
-        padding: 1.5rem 1rem;
+        min-height: 200px;
+        padding: 2rem 1.5rem;
     }
     
     .modal-content {
         margin: 1rem;
         padding: 2rem 1.5rem;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .success-actions {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .success-actions .cta-button {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    /* Mobile loading modal improvements */
+    .loading-modal .modal-content {
+        min-height: 200px;
+    }
+    
+    /* Better mobile typography */
+    .how-it-works h2,
+    .final-cta h2 {
+        font-size: var(--font-size-2xl);
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding: 3rem 0;
+    }
+    
+    .hero h1 {
+        font-size: var(--font-size-2xl);
+        margin-bottom: 1rem;
+    }
+    
+    .hero-subtitle {
+        font-size: var(--font-size-base);
+        margin-bottom: 2rem;
+    }
+    
+    .capability-card,
+    .step {
+        padding: 1.5rem 1rem;
+        min-height: 180px;
+    }
+    
+    .capability-icon {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .modal-content {
+        margin: 0.5rem;
+        padding: 1.5rem 1rem;
     }
     
     .success-content {
@@ -610,7 +685,60 @@ body {
     
     .cta-button {
         width: 100%;
-        max-width: 320px;
+        max-width: none;
+        margin: 0;
+        font-size: var(--font-size-base);
+        padding: 1rem 1.5rem;
+    }
+    
+    /* Stack sections more tightly on small screens */
+    .how-it-works,
+    .final-cta {
+        padding: 3rem 0 2rem;
+    }
+    
+    .hero-capabilities {
+        gap: 1rem;
+    }
+    
+    .steps {
+        gap: 1.5rem;
+    }
+}
+
+/* Enhanced touch device support */
+@media (hover: none) and (pointer: coarse) {
+    .cta-button:hover {
+        transform: none;
+        box-shadow: var(--shadow);
+    }
+    
+    .cta-button:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+    
+    .capability-card:hover,
+    .step:hover {
+        transform: none;
+    }
+    
+    /* Improve button feedback for touch */
+    .cta-button {
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .cta-button {
+        -webkit-appearance: none;
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .modal-content {
+        -webkit-overflow-scrolling: touch;
     }
 }
 

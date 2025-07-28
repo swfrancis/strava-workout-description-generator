@@ -16,6 +16,9 @@ class UserStorage:
         """Save or update user"""
         if not user or not user.strava_athlete_id:
             raise ValueError("User and athlete_id are required")
+        
+        # Update timestamp when saving
+        user.updated_at = datetime.utcnow()
         users_db[user.strava_athlete_id] = user
     
     @staticmethod
@@ -41,6 +44,9 @@ class UserStorage:
         """Update user tokens"""
         if not athlete_id or not access_token or not refresh_token:
             raise ValueError("athlete_id, access_token, and refresh_token are required")
+        
+        if not isinstance(expires_at, int) or expires_at <= 0:
+            raise ValueError("expires_at must be a positive integer timestamp")
         
         if athlete_id in users_db:
             user = users_db[athlete_id]

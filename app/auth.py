@@ -18,21 +18,26 @@ STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
 @router.get("/login")
-async def login():
+async def login(flow: str = Query("redirect", description="Auth flow type: popup or redirect")):
     """Redirect user to Strava authorization page"""
     params = {
         "client_id": STRAVA_CLIENT_ID,
         "response_type": "code",
         "redirect_uri": STRAVA_REDIRECT_URI,
         "approval_prompt": "force",
-        "scope": "read,activity:read_all,activity:write"
+        "scope": "read,activity:read_all,activity:write",
+        "state": flow  # Pass flow type to callback
     }
     
     auth_url = f"{STRAVA_AUTH_URL}?{urlencode(params)}"
     return RedirectResponse(url=auth_url)
 
 @router.get("/callback")
-async def callback(code: str = Query(...), scope: str = Query(None)):
+async def callback(
+    code: str = Query(...), 
+    scope: str = Query(None),
+    state: str = Query("redirect", description="Auth flow type")
+):
     """Handle Strava OAuth callback and exchange code for access token"""
     
     if not code:
@@ -69,9 +74,15 @@ async def callback(code: str = Query(...), scope: str = Query(None)):
         )
         UserStorage.save_user(user)
         
-        # Redirect to success page with token (for popup flow)
-        success_url = f"/auth/success?access_token={access_token}&athlete_id={athlete_info.get('id')}&expires_at={expires_at}"
-        return RedirectResponse(url=success_url)
+        # Handle different auth flows
+        if state == "popup":
+            # Popup flow - redirect to success page
+            success_url = f"/auth/success?access_token={access_token}&athlete_id={athlete_info.get('id')}&expires_at={expires_at}"
+            return RedirectResponse(url=success_url)
+        else:
+            # Mobile/redirect flow - redirect to main page with token params
+            redirect_url = f"/?access_token={access_token}&athlete_id={athlete_info.get('id')}&expires_at={expires_at}"
+            return RedirectResponse(url=redirect_url)
         
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=400, detail=f"Failed to exchange code for token: {str(e)}")

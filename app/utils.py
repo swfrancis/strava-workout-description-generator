@@ -9,9 +9,9 @@ from .strava_client import StravaAPIError
 logger = logging.getLogger(__name__)
 
 
-def handle_strava_api_errors(func: Callable) -> Callable:
+def handle_strava_api_errors(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to handle common Strava API errors"""
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except StravaAPIError as e:
@@ -24,7 +24,7 @@ def handle_strava_api_errors(func: Callable) -> Callable:
     return wrapper
 
 
-def parse_activity_safely(activity_data: dict, activity_id: Optional[str] = None) -> Optional[Any]:
+def parse_activity_safely(activity_data: dict, activity_id: Optional[int] = None) -> Optional[dict]:
     """Safely parse activity data with error logging"""
     try:
         # This would be used with your Activity model
@@ -36,7 +36,7 @@ def parse_activity_safely(activity_data: dict, activity_id: Optional[str] = None
         return None
 
 
-def parse_lap_safely(lap_data: dict, lap_index: Optional[int] = None) -> Optional[Any]:
+def parse_lap_safely(lap_data: dict, lap_index: Optional[int] = None) -> Optional[dict]:
     """Safely parse lap data with error logging"""
     try:
         # This would be used with your Lap model

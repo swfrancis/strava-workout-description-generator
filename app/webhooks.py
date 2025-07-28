@@ -7,9 +7,9 @@ import time
 
 from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
 
-from .models import WebhookEvent
+from .models import WebhookEvent, Lap
 from .user_storage import UserStorage
-from .strava_client import StravaClient
+from .strava_client import StravaClient, StravaAPIError
 from .analysis import analyse_workout_from_laps
 
 router = APIRouter(prefix="/webhook", tags=["webhooks"])
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 WEBHOOK_VERIFY_TOKEN = os.getenv("STRAVA_WEBHOOK_VERIFY_TOKEN", "your_verify_token")
 
 @router.get("/strava")
-async def webhook_verification(request: Request):
+async def webhook_verification(request: Request) -> dict:
     """Handle Strava webhook verification challenge"""
     hub_mode = request.query_params.get("hub.mode")
     hub_verify_token = request.query_params.get("hub.verify_token")
@@ -35,7 +35,7 @@ async def webhook_verification(request: Request):
         raise HTTPException(status_code=403, detail="Verification failed")
 
 @router.post("/strava")
-async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
+async def webhook_handler(request: Request, background_tasks: BackgroundTasks) -> dict:
     """Handle incoming Strava webhook events"""
     try:
         # Parse the webhook event
@@ -59,7 +59,7 @@ async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
         logger.error(f"Webhook processing error: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-async def process_activity_creation(event: WebhookEvent):
+async def process_activity_creation(event: WebhookEvent) -> None:
     """Process new activity creation in background"""
     logger.info(f"Starting background processing for activity {event.object_id}")
     try:
@@ -106,9 +106,19 @@ async def process_activity_creation(event: WebhookEvent):
             logger.info(f"Activity {event.object_id} has no manual laps - skipping interval analysis")
             return
         
+        # Convert laps to Lap objects
+        lap_objects = []
+        try:
+            for lap_data in laps:
+                lap = Lap(**lap_data)
+                lap_objects.append(lap)
+        except Exception as e:
+            logger.error(f"Error parsing lap data: {e}")
+            return
+        
         # Analyse the workout
         activity_name = activity.get("name", "")
-        analysis = analyse_workout_from_laps(laps, activity_name, activity_type)
+        analysis = analyse_workout_from_laps(lap_objects, activity_name, activity_type)
         if not analysis:
             logger.info(f"No intervals detected in activity {event.object_id}")
             return
@@ -123,8 +133,11 @@ async def process_activity_creation(event: WebhookEvent):
                 new_description = f"{analysis.short_description}\n\n{existing_description}"
             
             # Update the activity
-            client.update_activity(event.object_id, description=new_description)
-            logger.info(f"Updated activity {event.object_id} with description: {analysis.short_description}")
+            try:
+                client.update_activity(event.object_id, description=new_description)
+                logger.info(f"Updated activity {event.object_id} with description: {analysis.short_description}")
+            except StravaAPIError as update_error:
+                logger.error(f"Failed to update activity {event.object_id}: {update_error}")
         else:
             logger.info(f"Low confidence analysis for activity {event.object_id} - not updating")
             

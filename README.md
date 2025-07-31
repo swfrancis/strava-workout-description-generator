@@ -4,10 +4,11 @@ Automatically generates intelligent workout descriptions from Strava activity da
 
 ## Features
 
-- **Strava OAuth Integration** - Secure connection to your Strava account
-- **Lap-based Analysis** - Detects intervals from lap data (e.g., "5 x 3mins @ 3:30min/km w/ 2mins rest")
-- **Smart Pattern Recognition** - Uses machine learning to identify workout patterns when lap data isn't available
-- **Automatic Processing** - Generates descriptions immediately after workout completion
+- **Strava OAuth Integration** - Secure connection to your Strava account with mobile-friendly flow
+- **Comprehensive Interval Detection** - Advanced pattern recognition system that analyses lap data and workout structures
+- **Smart Workout Analysis** - Detects intervals, tempo runs, and structured workouts (e.g., "5 x 3mins @ 3:30min/km")
+- **Professional Descriptions** - Generates clean, professional workout descriptions for Strava activities
+- **Automatic Processing** - Analyses and generates descriptions immediately after workout completion
 
 ## Tech Stack
 
@@ -66,20 +67,21 @@ uvicorn app.main:app --reload
 
 ## Development Status
 
-🚧 **Work in Progress**
+🚀 **Core Features Implemented**
 
 Currently implemented:
-- ✅ FastAPI project structure
-- ✅ Strava OAuth authentication
-- ✅ Basic API endpoints
+- ✅ FastAPI project structure with comprehensive API endpoints
+- ✅ Strava OAuth authentication with mobile-friendly flow
+- ✅ Comprehensive interval detection system with advanced pattern recognition
+- ✅ Strava API client for activity data retrieval
+- ✅ Lap data analysis with sophisticated clustering algorithms
+- ✅ Professional workout description generation
+- ✅ Optimised codebase with improved maintainability
 
 Coming next:
-- 🔄 Strava API client for activity data
-- 🔄 Lap data analysis with clustering
-- 🔄 Spike detection for non-lap workouts
-- 🔄 ML-based interval detection
-- 🔄 Description generation
-- 🔄 Frontend interface
+- 🔄 Enhanced frontend interface
+- 🔄 Additional workout pattern recognition
+- 🔄 User customisation options
 
 ## Contributing
 

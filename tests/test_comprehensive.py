@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive test suite for Strava workout description generator
+Comprehensive test suite for LapLogic
 Tests all aspects of interval detection and pattern recognition
 """
 
@@ -301,7 +301,7 @@ def test_consistency_checking():
 
 def main():
     """Run all test suites"""
-    print("🏃‍♂️ Strava Workout Description Generator - Comprehensive Test Suite")
+    print("🏃‍♂️ LapLogic - Comprehensive Test Suite")
     print("=" * 80)
     
     test_basic_functionality()

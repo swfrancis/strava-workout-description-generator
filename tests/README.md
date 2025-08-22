@@ -1,6 +1,6 @@
 # Test Scripts
 
-This directory contains test scripts for the Strava Workout Description Generator.
+This directory contains test scripts for LapLogic.
 
 ## Test Files
 

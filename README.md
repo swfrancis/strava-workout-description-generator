@@ -1,6 +1,6 @@
-# Strava Workout Description Generator
+# LapLogic
 
-Automatically generates intelligent workout descriptions from Strava activity data by analyzing lap times and workout patterns.
+Automatically generates intelligent workout descriptions from Strava activity data by analysing lap times and workout patterns.
 
 ## Features
 
@@ -27,8 +27,8 @@ Automatically generates intelligent workout descriptions from Strava activity da
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/strava-workout-description-generator.git
-cd strava-workout-description-generator
+git clone https://github.com/yourusername/laplogic.git
+cd laplogic
 ```
 
 2. Install dependencies:

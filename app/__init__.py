@@ -1,1 +1,1 @@
-"""Strava Workout Description Generator - FastAPI Application"""
+"""LapLogic - FastAPI Application"""

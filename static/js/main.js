@@ -1,4 +1,4 @@
-// Main JavaScript for Strava Workout Description Generator
+// Main JavaScript for LapLogic
 
 // Global variables
 let authWindow = null;

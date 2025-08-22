@@ -19,7 +19,7 @@ from .webhooks import router as webhooks_router
 logger = LogConfig.get_logger(__name__)
 
 app = FastAPI(
-    title="Strava Workout Description Generator",
+    title="LapLogic",
     description="Automatically generates workout descriptions from Strava activity data",
     version="1.0.0"
 )

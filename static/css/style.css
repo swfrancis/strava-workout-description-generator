@@ -108,14 +108,14 @@ body {
 
 /* Hero Section */
 .hero {
-    min-height: 100vh;
-    min-height: 100dvh; /* Dynamic viewport height for mobile */
+    min-height: 80vh;
+    min-height: 80dvh; /* Dynamic viewport height for mobile */
     display: flex;
     align-items: center;
     background: var(--background);
     position: relative;
     overflow: hidden;
-    padding: clamp(2rem, 8vh, 4rem) 0;
+    padding: clamp(1.5rem, 4vh, 2.5rem) 0;
 }
 
 .hero::before {
@@ -136,7 +136,7 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     text-align: center;
-    padding: clamp(2rem, 6vh, 4rem) 0;
+    padding: clamp(1rem, 3vh, 2rem) 0;
 }
 
 .logo {
@@ -158,7 +158,7 @@ body {
 .hero h1 {
     font-size: clamp(var(--font-size-3xl), 6vw, var(--font-size-5xl));
     font-weight: 700;
-    margin-bottom: clamp(1rem, 3vh, 1.5rem);
+    margin-bottom: clamp(0.75rem, 2vh, 1rem);
     background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -171,7 +171,7 @@ body {
 .hero-subtitle {
     font-size: clamp(var(--font-size-lg), 4vw, var(--font-size-xl));
     color: var(--text-secondary);
-    margin-bottom: clamp(2rem, 6vh, 3rem);
+    margin-bottom: clamp(1.5rem, 4vh, 2rem);
     line-height: 1.5;
     max-width: 600px;
     margin-left: auto;
@@ -182,19 +182,23 @@ body {
 .hero-capabilities {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: clamp(1rem, 3vw, 2rem);
-    margin: clamp(2rem, 6vh, 4rem) auto;
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+    margin: clamp(1.5rem, 4vh, 2.5rem) auto;
     max-width: 1000px;
 }
 
 .capability-card {
     background: var(--background);
-    padding: clamp(1.5rem, 4vw, 2rem);
+    padding: clamp(1.25rem, 3vw, 1.75rem);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     transition: all var(--transition-base);
     text-align: center;
     border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 280px;
 }
 
 .capability-card:hover {
@@ -205,7 +209,7 @@ body {
 
 .capability-icon {
     font-size: clamp(2rem, 5vw, 2.5rem);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     display: block;
 }
 
@@ -218,21 +222,23 @@ body {
 
 .capability-desc {
     color: var(--text-secondary);
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
     line-height: 1.5;
     font-size: var(--font-size-sm);
 }
 
 .example-output {
     background: rgba(252, 76, 2, 0.08);
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: var(--border-radius-sm);
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
     font-size: var(--font-size-sm);
     color: var(--text-primary);
     font-weight: 500;
     border-left: 3px solid var(--primary-color);
-    text-align: left;
+    text-align: center;
+    margin-top: auto;
+    line-height: 1.4;
 }
 
 /* CTA Buttons */
@@ -301,7 +307,7 @@ body {
 
 /* How It Works Section */
 .how-it-works {
-    padding: clamp(4rem, 12vh, 8rem) 0;
+    padding: clamp(2.5rem, 6vh, 4rem) 0;
     background: var(--background);
 }
 
@@ -309,7 +315,7 @@ body {
     text-align: center;
     font-size: clamp(var(--font-size-3xl), 5vw, var(--font-size-4xl));
     font-weight: 700;
-    margin-bottom: clamp(3rem, 8vh, 4rem);
+    margin-bottom: clamp(2rem, 4vh, 2.5rem);
     color: var(--text-primary);
     letter-spacing: -0.02em;
 }
@@ -325,7 +331,7 @@ body {
 .step {
     text-align: center;
     position: relative;
-    padding: clamp(1.5rem, 4vw, 2rem);
+    padding: clamp(1.25rem, 3vw, 1.75rem);
     background: var(--background);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
@@ -338,17 +344,17 @@ body {
 }
 
 .step-number {
-    width: clamp(3rem, 8vw, 4rem);
-    height: clamp(3rem, 8vw, 4rem);
+    width: clamp(2.5rem, 6vw, 3.5rem);
+    height: clamp(2.5rem, 6vw, 3.5rem);
     background: var(--primary-color);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(var(--font-size-xl), 4vw, var(--font-size-2xl));
+    font-size: clamp(var(--font-size-lg), 3vw, var(--font-size-xl));
     font-weight: 700;
-    margin: 0 auto 1.5rem;
+    margin: 0 auto 1rem;
     box-shadow: var(--shadow);
 }
 
@@ -367,7 +373,7 @@ body {
 
 /* Final CTA Section */
 .final-cta {
-    padding: clamp(4rem, 12vh, 8rem) 0;
+    padding: clamp(2.5rem, 6vh, 4rem) 0;
     text-align: center;
     background: var(--background);
 }
@@ -383,7 +389,7 @@ body {
 .final-cta p {
     font-size: var(--font-size-xl);
     color: var(--text-secondary);
-    margin-bottom: clamp(2rem, 6vh, 3rem);
+    margin-bottom: clamp(1.5rem, 4vh, 2rem);
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
@@ -644,7 +650,7 @@ body {
 
 @media (max-width: 480px) {
     .hero {
-        padding: 3rem 0;
+        padding: 2rem 0;
     }
     
     .hero h1 {
@@ -654,7 +660,7 @@ body {
     
     .hero-subtitle {
         font-size: var(--font-size-base);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
     
     .capability-card,
@@ -694,7 +700,7 @@ body {
     /* Stack sections more tightly on small screens */
     .how-it-works,
     .final-cta {
-        padding: 3rem 0 2rem;
+        padding: 2rem 0 1.5rem;
     }
     
     .hero-capabilities {

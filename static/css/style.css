@@ -242,6 +242,30 @@ body {
 }
 
 /* CTA Buttons */
+.strava-connect-button {
+    display: inline-block;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.strava-connect-button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.strava-connect-button:active {
+    transform: translateY(0);
+}
+
+.strava-connect-button img {
+    display: block;
+    height: 48px;
+    width: auto;
+}
+
 .cta-button {
     display: inline-flex;
     align-items: center;
